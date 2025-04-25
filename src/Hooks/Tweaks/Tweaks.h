@@ -17,6 +17,24 @@ namespace Hooks::Tweaks {
 			inline static size_t offset{ 0x4 };
 		};
 
+		struct CloakEffect
+		{
+			static bool Install();
+			static void Thunk(RE::ActiveEffect* a_this, float a_delta);
+
+			inline static REL::Relocation<decltype(&Thunk)> _func;
+			inline static size_t offset{ 0x4 };
+		};
+
+		struct SummonEffect
+		{
+			static bool Install();
+			static void Thunk(RE::ActiveEffect* a_this, float a_delta);
+
+			inline static REL::Relocation<decltype(&Thunk)> _func;
+			inline static size_t offset{ 0x4 };
+		};
+
 		bool extendInDialogue{ false };
 
 		bool ShouldUpdate(RE::ActiveEffect* a_effect);
