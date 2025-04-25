@@ -94,11 +94,9 @@ namespace Hooks::Fixes
 		}
 
 		if (!isHostile && fixBeneficial) {
-			LOG_DEBUG("  >Prevented beneficial absorption."sv);
 			return true;
 		}
 		else if (isPoison && isContact && fixPoison) {
-			LOG_DEBUG("  >Prevented poison absorption."sv);
 			return true;
 		}
 

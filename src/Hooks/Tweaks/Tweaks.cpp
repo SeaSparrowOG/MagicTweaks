@@ -59,12 +59,13 @@ namespace Hooks::Tweaks
 		const auto* caster = a_effect->GetCasterActor().get();
 		const auto* target = a_effect->GetTargetActor();
 		const auto* base = a_effect->effect ? a_effect->effect->baseEffect : nullptr;
-		if (!base || !caster || !target || target != caster) {
+		if (!base || !caster || !caster->IsPlayerRef() || !target) {
 			return;
 		}
 
 		if (base->data.flags.any(ActiveEffectFlag::kDetrimental,
-			ActiveEffectFlag::kHostile, ActiveEffectFlag::kNoDuration)) {
+			ActiveEffectFlag::kHostile,
+			ActiveEffectFlag::kNoDuration)) {
 			return;
 		}
 
