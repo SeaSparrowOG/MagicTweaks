@@ -25,9 +25,24 @@ namespace RE
 			constexpr auto VTABLE_PlayerCharacterMagicTarget = REL::ID(208048);
 		}
 
+		namespace LightEffect
+		{
+			constexpr auto VTABLE_LightEffect = REL::ID(205894);
+		}
+
+		namespace ScriptEffect
+		{
+			constexpr auto VTABLE_ScriptEffect = REL::ID(206031);
+		}
+
 		namespace SummonCreatureEffect
 		{
 			constexpr auto VTABLE_SummonCreatureEffect = REL::ID(206083);
+		}
+
+		namespace ValueModifierEffect
+		{
+			constexpr auto VTABLE_ValueModifierEffect = REL::ID(206143);
 		}
 	}
 }

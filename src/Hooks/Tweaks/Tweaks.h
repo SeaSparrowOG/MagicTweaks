@@ -1,43 +1,15 @@
 #pragma once
 
 namespace Hooks::Tweaks {
-	class Listener :
-		public Utilities::Singleton::ISingleton<Listener>
+	class EffectExtender :
+		public Utilities::Singleton::ISingleton<EffectExtender>
 	{
 	public:
 		bool Install();
+		void ExtendEffectIfNecessary(RE::ActiveEffect* a_effect, float a_extension);
 
 	private:
-		struct BoundEffect
-		{
-			static bool Install();
-			static void Thunk(RE::ActiveEffect* a_this, float a_delta);
-
-			inline static REL::Relocation<decltype(&Thunk)> _func;
-			inline static size_t offset{ 0x4 };
-		};
-
-		struct CloakEffect
-		{
-			static bool Install();
-			static void Thunk(RE::ActiveEffect* a_this, float a_delta);
-
-			inline static REL::Relocation<decltype(&Thunk)> _func;
-			inline static size_t offset{ 0x4 };
-		};
-
-		struct SummonEffect
-		{
-			static bool Install();
-			static void Thunk(RE::ActiveEffect* a_this, float a_delta);
-
-			inline static REL::Relocation<decltype(&Thunk)> _func;
-			inline static size_t offset{ 0x4 };
-		};
-
 		bool extendInDialogue{ false };
-
-		bool ShouldUpdate(RE::ActiveEffect* a_effect);
 	};
 
 	bool Install();

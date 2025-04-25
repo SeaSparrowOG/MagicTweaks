@@ -136,7 +136,10 @@ namespace Settings::INI
 			{"Tweaks", "bExtendEffectsInDialogue"},
 			{"Tweaks", "bTweakBoundWeapons"},
 			{"Tweaks", "bTweakCloaks"},
-			{"Tweaks", "bTweakSummons"}
+			{"Tweaks", "bTweakLight"},
+			{"Tweaks", "bTweakScript"},
+			{"Tweaks", "bTweakCloaks"},
+			{"Tweaks", "bTweakValues"}
 		};
 
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
