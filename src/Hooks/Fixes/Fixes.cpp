@@ -68,10 +68,7 @@ namespace Hooks::Fixes
 			return true;
 		}
 
-		LOG_DEBUG("Hook: {} cast {} on {}"sv, a_actor->GetName(), a_magicItem->GetName(), targetActor->GetName());
-
 		if (fixSelfTarget && a_actor == targetActor) {
-			LOG_DEBUG("  >Prevent self absorption"sv);
 			return true;
 		}
 
