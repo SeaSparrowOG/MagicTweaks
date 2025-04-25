@@ -1,6 +1,7 @@
 #include "Tweaks.h"
 
 #include "RE/Offset.h"
+#include "RE/Misc.h"
 #include "Settings/INISettings.h"
 
 #include "Hooks/Tweaks/Archetypes/BoundEffect.h"
@@ -13,12 +14,14 @@
 namespace Hooks::Tweaks
 {
 	bool Install() {
-		auto* listener = EffectExtender::GetSingleton();
-		if (!listener) {
-			logger::critical("Failed to get Tweaks Listener."sv);
+		auto* extender = EffectExtender::GetSingleton();
+		auto* silencer = CommentSilencer::GetSingleton();
+		if (!extender || !silencer) {
+			logger::critical("Failed to get internal hook listeners."sv);
 			return false;
 		}
-		return listener->Install();
+		return extender->Install() &&
+			silencer->Install();
 	}
 
 	bool EffectExtender::Install() {
@@ -68,5 +71,54 @@ namespace Hooks::Tweaks
 		if (ui->IsMenuOpen(RE::DialogueMenu::MENU_NAME)) {
 			a_effect->elapsedSeconds -= a_extension;
 		}
+	}
+
+	bool CommentSilencer::Install() {
+		auto* iniHolder = Settings::INI::Holder::GetSingleton();
+		if (!iniHolder) {
+			logger::critical("Failed to fetch ini settings holder."sv);
+			return false;
+		}
+
+		auto installRaw = iniHolder->GetStoredSetting<bool>("Tweaks|bSuppressMagicComments");
+		bool install = installRaw.has_value() ? installRaw.value() : false;
+		if (!installRaw.has_value()) {
+			logger::warn("  >Setting {} not found in ini settings, treating as false.", "Tweaks|bSuppressMagicComments");
+		}
+		if (!install) {
+			return true;
+		}
+
+		REL::Relocation<std::uintptr_t> target{ RE::Offset::DialogueTopicManager::SayTopic, 0xE2 };
+		if (!(REL::make_pattern<"E8">().match(target.address()))) {
+			logger::critical("Failed to validate pattern of the Comment Silencer."sv);
+			return false;
+		}
+
+		auto& trampoline = SKSE::GetTrampoline();
+		_func = trampoline.write_call<5>(target.address(), &Thunk);
+		return true;
+	}
+
+	void CommentSilencer::AppendQuest(const RE::TESQuest* a_candidate) {
+		if (blacklistedQuests.contains(a_candidate)) {
+			return;
+		}
+		blacklistedQuests.emplace(a_candidate);
+	}
+
+	RE::DialogueItem* CommentSilencer::Thunk(RE::DialogueItem* a_dialogueItem,
+		RE::TESQuest* a_quest,
+		RE::TESTopic* a_topic,
+		RE::TESTopicInfo* a_topicInfo,
+		RE::TESObjectREFR* a_speaker) {
+		auto* silencer = CommentSilencer::GetSingleton();
+		auto* response = _func(a_dialogueItem, a_quest, a_topic, a_topicInfo, a_speaker);
+		if (silencer && silencer->blacklistedQuests.contains(a_quest)) {
+			delete response;
+			return nullptr;
+		}
+
+		return RE::ConstructDialogueItem(a_dialogueItem, a_quest, a_topic, a_topicInfo, a_speaker);
 	}
 }

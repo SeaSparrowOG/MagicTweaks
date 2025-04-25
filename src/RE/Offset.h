@@ -20,6 +20,11 @@ namespace RE
 			constexpr auto VTABLE_CloakEffect = REL::ID(205849);
 		}
 
+		namespace DialogueTopicManager
+		{
+			constexpr auto SayTopic = REL::ID(25541);
+		}
+
 		namespace PlayerCharacter
 		{
 			constexpr auto VTABLE_PlayerCharacterMagicTarget = REL::ID(208048);
