@@ -1,8 +1,4 @@
-#include "Data/ModObjectManager.h"
-#include "Events/Events.h"
 #include "Hooks/Hooks.h"
-#include "Papyrus/Papyrus.h"
-#include "Serialization/Serde.h"
 #include "Settings/INISettings.h"
 #include "Settings/JSONSettings.h"
 
@@ -68,20 +64,12 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
 	case SKSE::MessagingInterface::kDataLoaded:
-		if (!Settings::INI::Holder::GetSingleton()->Read()) {
-			SKSE::stl::report_and_fail("Failed to read INI settings."sv);
+		if (!Settings::JSON::Read()) {
+			SKSE::stl::report_and_fail("Failed to read JSON settings, check the log for more information."sv);
 		}
-		if (!Settings::JSON::Holder::GetSingleton()->Read()) {
-			SKSE::stl::report_and_fail("Failed to read JSON settings."sv);
-		}
-		if (!Data::ModObjectManager::GetSingleton()->Reload()) {
-			SKSE::stl::report_and_fail("Failed to preload ESP forms."sv);
-		}
-		if (!Events::Install()) {
-			SKSE::stl::report_and_fail("Failed to register event listeners."sv);
-		}
-		logger::info("==========================================================");
-		logger::info("Startup tasks finished, enjoy your game!");
+		logger::info("  >Read JSON settings."sv);
+		logger::info("=========================================================="sv);
+		logger::info("Startup tasks finished, enjoy your game!"sv);
 		break;
 	default:
 		break;
@@ -91,10 +79,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
 	InitializeLog();
-	logger::info("=================================================");
+	logger::info("================================================="sv);
 	logger::info("{} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
 	logger::info("Author: SeaSparrow"sv);
-	logger::info("=================================================");
+	logger::info("================================================="sv);
 	SKSE::Init(a_skse);
 
 	const auto ver = a_skse->RuntimeVersion();
@@ -104,18 +92,18 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	logger::info("Performing startup tasks..."sv);
 
-	Hooks::Install();
+	if (!Settings::INI::Read()) {
+		SKSE::stl::report_and_fail("Failed to read INI settings, check the log for more information."sv);
+	}
+	logger::info("  >Read INI settings."sv);
 
-	SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions);
+	if (!Hooks::Install()) {
+		SKSE::stl::report_and_fail("Failed to install necessary hooks, check the log for more information."sv);
+	}
+	logger::info("  >Installed necessary hooks."sv);
 
 	const auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(&MessageEventCallback);
-
-	const auto serialization = SKSE::GetSerializationInterface();
-	serialization->SetUniqueID(Serialization::ID);
-	serialization->SetSaveCallback(&Serialization::SaveCallback);
-	serialization->SetLoadCallback(&Serialization::LoadCallback);
-	serialization->SetRevertCallback(&Serialization::RevertCallback);
 
 	return true;
 }

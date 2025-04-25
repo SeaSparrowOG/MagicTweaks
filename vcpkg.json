@@ -1,7 +1,7 @@
 {
-  "name": "example-plugin",
+  "name": "magic-tweaks",
   "version-string": "1.0.0",
-  "description": "Template for SKSE plugin built using commonlib. MIT License by default.",
+  "description": "SKSE plugin that fixes and tweaks magic systems for Skyrim pecial Edition.",
   "homepage": "",
   "license": "MIT",
   "dependencies": [

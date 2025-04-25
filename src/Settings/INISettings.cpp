@@ -7,14 +7,21 @@
 
 namespace Settings::INI
 {
+	bool Read() {
+		auto* holder = Holder::GetSingleton();
+		if (!holder) {
+			logger::critical("Failed to get INI holder."sv);
+			return false;
+		}
+		return holder->Read();
+	}
+
 	bool Holder::Read() {
 		bool encounteredError = false;
 
         std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
 		CSimpleIniA ini{};
 		size_t settingCount = 0;
-		logger::info("==========================================================");
-		logger::info("Reading and validating INI settings from {}.ini"sv, Plugin::NAME);
 
 		try {
 			ini.SetUnicode();
@@ -24,7 +31,6 @@ namespace Settings::INI
 			ini.GetAllSections(sections);
 
 			if (sections.empty()) {
-				logger::warn("  >Finished reading INI file, but found no settings. This MAY be normal.");
 				return true;
 			}
 
@@ -33,7 +39,6 @@ namespace Settings::INI
 				ini.GetAllKeys(section.pItem, sectionKeys);
 
 				if (sectionKeys.empty()) {
-					logger::warn("  >INI section {} has no settings. This MAY be normal.", section.pItem);
 					continue;
 				}
 
@@ -104,8 +109,6 @@ namespace Settings::INI
 			return false;
 		}
 
-		logger::info("  >Finished reading {} settings.", std::to_string(settingCount));
-
 		if (encounteredError) {
 			logger::info("Errors were encountered while reading the INI file. See log for more details."sv);
 			return false;
@@ -126,10 +129,13 @@ namespace Settings::INI
 		};
 
 		const StoredSetting expectedSettings[] = {
-			{"Debug", "bEnableDebugMessages"}
-		};
+			{"Fixes", "bNeverAbsorbPoison"},
+			{"Fixes", "bNeverAbsorbSelfTargettingEffects"},
+			{"Fixes", "bNeverAbsorbBeneficialEffects"},
 
-		logger::info("Verifying INI settings..."sv);
+			{"Tweaks", "bExtendEffectsInDialogue"},
+			{"Tweaks", "bTweakBoundWeapons"}
+		};
 
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
 		CSimpleIniA ini{};
@@ -154,13 +160,10 @@ namespace Settings::INI
 			logger::info("Failed to validate one or more settings."sv);
 			return false;
 		}
-		logger::info("Successfully verified INI settings."sv);
 		return OverrideSettings();
 	}
 
 	bool Holder::OverrideSettings() {
-		logger::info("==========================================================");
-		logger::info("Checking the custom INI..."sv);
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}_custom.ini)"sv, Plugin::NAME);
 		if (!std::filesystem::exists(iniPath)) {
 			logger::info("  >Custom INI not found."sv);
@@ -176,7 +179,6 @@ namespace Settings::INI
 			ini.GetAllSections(sections);
 
 			if (sections.empty()) {
-				logger::warn("  >Finished reading Custom INI file, but found no overrides.");
 				return true;
 			}
 
@@ -185,7 +187,6 @@ namespace Settings::INI
 				ini.GetAllKeys(section.pItem, sectionKeys);
 
 				if (sectionKeys.empty()) {
-					logger::warn("  >Custom INI section {} has no settings.", section.pItem);
 					continue;
 				}
 
@@ -208,8 +209,6 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
-
-						logger::info("  >Overrode {} with {}."sv, foundSetting, value);
 						stringSettings[foundSetting] = value;
 					}
 					else if (settingType == "f") {
@@ -223,8 +222,6 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
-
-						logger::info("  >Overrode {} with {}."sv, foundSetting, std::to_string(value));
 						floatSettings[foundSetting] = value;
 					}
 					else if (settingType == "b") {
@@ -232,8 +229,6 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
-
-						logger::info("  >Overrode {} with {}."sv, foundSetting, ini.GetBoolValue(section.pItem, key.pItem));
 						boolSettings[foundSetting] = ini.GetBoolValue(section.pItem, key.pItem);
 					}
 					else if (settingType == "i") {
@@ -242,8 +237,6 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
-
-						logger::info("  >Overrode {} with {}."sv, foundSetting, std::to_string(value));
 						longSettings[foundSetting] = value;
 					}
 					else {

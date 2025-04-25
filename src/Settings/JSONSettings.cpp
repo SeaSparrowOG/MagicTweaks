@@ -2,11 +2,17 @@
 
 namespace Settings::JSON
 {
-	bool Holder::Read()
-	{
-		logger::info("==========================================================");
+	bool Read() {
+		auto* holder = Holder::GetSingleton();
+		if (!holder) {
+			logger::critical("Failed to get JSON setting holder."sv);
+			return false;
+		}
+		return holder->Read();
+	}
+
+	bool Holder::Read() {
 		std::string jsonFolder = fmt::format(R"(.\Data\SKSE\Plugins\{})"sv, Plugin::NAME);
-		logger::info("Reading and validating project JSON files in {}.", jsonFolder);
 
 		std::vector<std::string> paths{};
 		try {
@@ -15,9 +21,7 @@ namespace Settings::JSON
 					paths.push_back(entry.path().string());
 				}
 			}
-
 			std::sort(paths.begin(), paths.end());
-			logger::info("  >Found {} configuration files."sv, std::to_string(paths.size()));
 		}
 		catch (const std::exception& e) {
 			logger::warn("Caught {} while reading files.", e.what());
@@ -44,8 +48,6 @@ namespace Settings::JSON
 				continue;
 			}
 		}
-
-		logger::info("Finished reading all settings."sv);
 		return true;
 	}
 }

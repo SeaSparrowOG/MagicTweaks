@@ -4,12 +4,18 @@ namespace RE
 {
 	namespace Offset
 	{
-		namespace Message
+		// Credit for VTABLE Offsets: PO3, Thiaggo
+		namespace BoundItemEffect
 		{
-			constexpr auto GetDescription = REL::ID(14552);
+			constexpr auto VTABLE_BoundItemEffect = REL::ID(205842);
 		}
-
-		constexpr auto DebugNotification = REL::ID(52933);
-		constexpr auto CreateMessage = REL::ID(52269);
+		namespace Character
+		{
+			constexpr auto VTABLE_CharacterMagicTarget = REL::ID(207894);
+		}
+		namespace PlayerCharacter
+		{
+			constexpr auto VTABLE_PlayerCharacterMagicTarget = REL::ID(208048);
+		}
 	}
 }
