@@ -67,7 +67,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		if (!Settings::JSON::Read()) {
 			SKSE::stl::report_and_fail("Failed to read JSON settings, check the log for more information."sv);
 		}
-		logger::info("=========================================================="sv);
+		logger::info("================================================="sv);
 		logger::info("Startup tasks finished, enjoy your game!"sv);
 		break;
 	default:

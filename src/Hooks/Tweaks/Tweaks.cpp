@@ -39,6 +39,10 @@ namespace Hooks::Tweaks
 		if (!extendInDialogueRaw.has_value()) {
 			logger::warn("    >Extend In Dialogue tweak setting somehow not specified in the INI, treating as false."sv);
 		}
+		if (!extendInDialogue) {
+			logger::info("    >Extend in Dialogue is disabled, VFunc hooks will not be installed"sv);
+			return true;
+		}
 
 		return Archetypes::BoundEffect::Install() &&
 			Archetypes::CloakEffect::Install() &&
@@ -195,7 +199,7 @@ namespace Hooks::Tweaks
 
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::Offset::PlayerCharacter::Vtbl };
 		_func = VTABLE.write_vfunc(offset, Thunk);
-		logger::info("  >Installed Player VFunc hook."sv);
+		logger::info("    >Installed Player VFunc hook."sv);
 		return true;
 	}
 

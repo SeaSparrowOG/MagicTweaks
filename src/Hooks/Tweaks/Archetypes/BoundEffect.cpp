@@ -15,7 +15,7 @@ namespace Hooks::Tweaks::Archetypes
 		auto installRaw = iniHolder->GetStoredSetting<bool>(setting);
 		bool install = installRaw.has_value() ? installRaw.value() : false;
 		if (!installRaw.has_value()) {
-			logger::warn("  >Setting {} not found in ini settings, treating as false.", setting);
+			logger::warn("    >Setting {} not found in ini settings, treating as false.", setting);
 		}
 		if (!install) {
 			return true;
@@ -23,6 +23,7 @@ namespace Hooks::Tweaks::Archetypes
 
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::Offset::BoundItemEffect::VTABLE_BoundItemEffect };
 		_func = VTABLE.write_vfunc(offset, Thunk);
+		logger::info("    >Installed Bound Item VFunc hook"sv);
 		return true;
 	}
 
