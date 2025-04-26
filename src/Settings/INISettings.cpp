@@ -8,9 +8,10 @@
 namespace Settings::INI
 {
 	bool Read() {
+		logger::info("Reading INI settings:"sv);
 		auto* holder = Holder::GetSingleton();
 		if (!holder) {
-			logger::critical("Failed to get INI holder."sv);
+			logger::critical("  >Failed to get INI holder."sv);
 			return false;
 		}
 		return holder->Read();
@@ -18,10 +19,11 @@ namespace Settings::INI
 
 	bool Holder::Read() {
 		bool encounteredError = false;
-
         std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
 		CSimpleIniA ini{};
 		size_t settingCount = 0;
+
+		logger::info("  >Expected INI path: {}", iniPath);
 
 		try {
 			ini.SetUnicode();
@@ -105,15 +107,15 @@ namespace Settings::INI
 			}
 		}
 		catch (std::exception& e) {
-			logger::error("Caught exception {} while fetching INI settings.", e.what());
+			logger::error("  >Caught exception {} while fetching INI settings.", e.what());
 			return false;
 		}
 
 		if (encounteredError) {
-			logger::info("Errors were encountered while reading the INI file. See log for more details."sv);
+			logger::critical("  >Errors were encountered while reading the INI file."sv);
 			return false;
 		}
-
+		logger::info("  >Read {} default settings.", std::to_string(settingCount));
 		return VerifySettings();
 	}
 
@@ -139,14 +141,15 @@ namespace Settings::INI
 			{"Tweaks", "bTweakLight"},
 			{"Tweaks", "bTweakScripts"},
 			{"Tweaks", "bTweakCloaks"},
-			{"Tweaks", "bTweakValue"},
-
-			{"Tweaks", "bSuppressMagicComments"}
+			{"Tweaks", "bTweakValue"}
 		};
 
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
 		CSimpleIniA ini{};
 		bool iniGood = true;
+
+		logger::info("  >Validating settings..."sv);
+
 		try {
 			ini.SetUnicode();
 			ini.LoadFile(iniPath.data());
@@ -159,19 +162,23 @@ namespace Settings::INI
 			}
 		}
 		catch (std::exception& e) {
-			logger::error("Caught exception {} while validating ini settings."sv, e.what());
+			logger::error("  >Caught exception {} while validating ini settings."sv, e.what());
 			return false;
 		}
 
 		if (!iniGood) {
-			logger::info("Failed to validate one or more settings."sv);
+			logger::info("  >Failed to validate one or more settings."sv);
 			return false;
 		}
+
+		logger::info("  >Validated settings successfully."sv);
+
 		return OverrideSettings();
 	}
 
 	bool Holder::OverrideSettings() {
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}_custom.ini)"sv, Plugin::NAME);
+		logger::info("  >Checking custom INI..."sv);
 		if (!std::filesystem::exists(iniPath)) {
 			logger::info("  >Custom INI not found."sv);
 			return true;
@@ -257,6 +264,7 @@ namespace Settings::INI
 			return false;
 		}
 
+		logger::info("Finished reading INI settings successfully!"sv);
 		return true;
 	}
 }

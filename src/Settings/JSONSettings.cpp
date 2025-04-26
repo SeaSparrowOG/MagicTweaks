@@ -5,9 +5,10 @@
 namespace Settings::JSON
 {
 	bool Read() {
+		logger::info("Reading JSON configs..."sv);
 		auto* holder = Holder::GetSingleton();
 		if (!holder) {
-			logger::critical("Failed to get JSON setting holder."sv);
+			logger::critical("  >Failed to get JSON setting holder."sv);
 			return false;
 		}
 		return holder->Read();
@@ -15,7 +16,8 @@ namespace Settings::JSON
 
 	bool Holder::Read() {
 		auto* commentSilencer = Hooks::Tweaks::CommentSilencer::GetSingleton();
-		if (!commentSilencer) {
+		auto* dispelManager = Hooks::Tweaks::SpellDispeler::GetSingleton();
+		if (!commentSilencer || !dispelManager) {
 			logger::critical("Failed to get internal singletons."sv);
 			return false;
 		}
@@ -29,13 +31,13 @@ namespace Settings::JSON
 				}
 			}
 			std::sort(paths.begin(), paths.end());
+			logger::info("  >Found {} configuration files."sv, paths.size());
 		}
 		catch (const std::exception& e) {
-			logger::warn("Caught {} while reading files.", e.what());
+			logger::warn("  >Caught {} while reading files.", e.what());
 			return false;
 		}
 		if (paths.empty()) {
-			logger::info("No settings found");
 			return true;
 		}
 
@@ -45,56 +47,143 @@ namespace Settings::JSON
 			try {
 				std::ifstream rawJSON(path);
 				JSONReader.parse(rawJSON, JSONFile, false);
-				if (!JSONFile.isObject()) {
-					logger::warn("  >File {} is not valid. Top level should be an object."sv, path);
-					continue;
-				}
-
-				const auto& blacklistedQuests = JSONFile["blacklistedQuests"];
-				if (!blacklistedQuests) {
-					logger::warn("  >File {} does not have blacklisted quests."sv, path);
-					continue;
-				}
-				if (!blacklistedQuests.isArray()) {
-					logger::warn("  >File {} has blacklisted quests, but the format is not valid. This field needs to be an array."sv, path);
-					continue;
-				}
-
-				std::vector<const RE::TESQuest*> candidateQuests{};
-				const auto begin = blacklistedQuests.begin();
-				const auto end = blacklistedQuests.end();
-				bool errored = false;
-				for (auto it = begin; !errored && it != end; ++it) {
-					const auto& rawQuest = *it;
-					if (!rawQuest || !rawQuest.isString()) {
-						logger::warn("  >File {} has a non-string blacklisted quest. All quests in this config will be ignored."sv, path);
-						errored = true;
-						continue;
-					}
-
-					const auto* candidate = Utilities::Forms::GetFormFromString<RE::TESQuest>(rawQuest.asString());
-					if (!candidate) {
-						logger::warn("  >File {} has form {}, but it could not be found."sv, path, rawQuest.asString());
-						continue;
-					}
-					candidateQuests.push_back(candidate);
-				}
-				if (candidateQuests.empty() || errored) {
-					continue;
-				}
-				for (const auto* candidate : candidateQuests) {
-					commentSilencer->AppendQuest(candidate);
-				}
+				
+				std::string name = path.substr(jsonFolder.size() + 1, path.size() - 1);
+				ParseEntry(JSONFile, name);
 			}
 			catch (const Json::Exception& e) {
-				logger::warn("Caught {} while reading files.", e.what());
+				logger::warn("  >Caught {} while reading files.", e.what());
 				continue;
 			}
 			catch (const std::exception& e) {
-				logger::error("Caught unhandled exception {} while reading files.", e.what());
+				logger::error("  >Caught unhandled exception {} while reading files.", e.what());
 				continue;
 			}
 		}
+
+		if (!effectsToDispel.empty()) {
+			logger::info("  >Found {} effects to dispel."sv, effectsToDispel.size());
+			for (const auto* effect : effectsToDispel) {
+				dispelManager->ApendEffect(effect);
+			}
+		}
+		if (!questsToIgnore.empty()) {
+			logger::info("  >Found {} quests to ignore."sv, questsToIgnore.size());
+			for (const auto* quest : questsToIgnore) {
+				commentSilencer->AppendQuest(quest);
+			}
+		}
 		return true;
+	}
+
+	void Holder::ParseEntry(const Json::Value& a_entry, 
+		const std::string& a_fileName) 
+	{
+		logger::info("    >Parsing {}..."sv, a_fileName);
+
+		if (a_entry.empty()) {
+			logger::warn("      >Empty");
+			return;
+		}
+		else if (!a_entry.isObject()) {
+			logger::warn("      >Invalid structure: Top level is not an object."sv);
+			return;
+		}
+
+		const auto& dispelTargets = a_entry[DISPEL_ON_SEATHE_FIELD];
+		if (dispelTargets) {
+			if (!dispelTargets.isArray()) {
+				logger::warn("      >Invalid {} field. Expected an array.", DISPEL_ON_SEATHE_FIELD);
+			}
+			else {
+				ParseDispelEntry(dispelTargets);
+			}
+		}
+
+		const auto& ignoreQuestDialogue = a_entry[IGNORE_QUEST_DIALOGUE];
+		if (ignoreQuestDialogue) {
+			if (!ignoreQuestDialogue.isArray()) {
+				logger::warn("      >Invalid {} field. Expected an array.", IGNORE_QUEST_DIALOGUE);
+			}
+			else {
+				ParseQuestEntry(dispelTargets);
+			}
+		}
+	}
+
+	void Holder::ParseDispelEntry(const Json::Value& a_entry) {
+		using ActiveEffectFlag = RE::EffectSetting::EffectSettingData::Flag;
+		if (a_entry.empty()) {
+			return;
+		}
+		
+		std::vector<const RE::EffectSetting*> foundForms{};
+		foundForms.reserve(a_entry.size());
+
+		for (const auto& entry : a_entry) {
+			if (!entry.isString()) {
+				logger::warn("      >{} contains non-string entries, aborting reading."sv, DISPEL_ON_SEATHE_FIELD);
+				return;
+			}
+			
+			const auto* foundForm = Utilities::Forms::GetFormFromString<RE::EffectSetting>(entry.asString());
+			if (foundForm && !foundForm->data.flags.any(ActiveEffectFlag::kNoDuration)) {
+				foundForms.push_back(foundForm);
+			}
+			else {
+				const auto* alternateForm = Utilities::Forms::GetFormFromString<RE::SpellItem>(entry.asString());
+				if (alternateForm && !alternateForm->effects.empty()) {
+					const auto& effects = alternateForm->effects;
+					for (const auto* effect : effects) {
+						const auto* base = effect ? effect->baseEffect : nullptr;
+						if (!base || 
+							base->data.flags.any(ActiveEffectFlag::kNoDuration) ||
+							effect->effectItem.duration < 1) {
+							continue;
+						}
+						foundForms.push_back(base);
+					}
+				}
+			}
+		}
+
+		if (foundForms.empty()) {
+			logger::warn("      >No effects resolved in {}.", DISPEL_ON_SEATHE_FIELD);
+			return;
+		}
+		
+		for (const auto* spell : foundForms) {
+			effectsToDispel.push_back(spell);
+		}
+	}
+
+	void Holder::ParseQuestEntry(const Json::Value& a_entry) {
+		if (a_entry.empty()) {
+			return;
+		}
+
+		std::vector<const RE::TESQuest*> foundForms{};
+		foundForms.reserve(a_entry.size());
+
+		for (const auto& entry : a_entry) {
+			if (!entry.isString()) {
+				logger::warn("      >{} contains non-string entries, aborting reading."sv, DISPEL_ON_SEATHE_FIELD);
+				return;
+			}
+
+			const auto* foundForm = Utilities::Forms::GetFormFromString<RE::TESQuest>(entry.asString());
+			if (foundForm) {
+				foundForms.push_back(foundForm);
+			}
+		}
+
+		if (foundForms.empty()) {
+			logger::warn("      >No spells resolved in {}.", DISPEL_ON_SEATHE_FIELD);
+			return;
+		}
+
+		for (const auto* form : foundForms) {
+			questsToIgnore.push_back(form);
+		}
 	}
 }

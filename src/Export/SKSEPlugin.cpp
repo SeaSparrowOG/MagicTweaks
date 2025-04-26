@@ -67,7 +67,6 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		if (!Settings::JSON::Read()) {
 			SKSE::stl::report_and_fail("Failed to read JSON settings, check the log for more information."sv);
 		}
-		logger::info("  >Read JSON settings."sv);
 		logger::info("=========================================================="sv);
 		logger::info("Startup tasks finished, enjoy your game!"sv);
 		break;
@@ -90,17 +89,14 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 		return false;
 	}
 
-	logger::info("Performing startup tasks..."sv);
-
 	if (!Settings::INI::Read()) {
 		SKSE::stl::report_and_fail("Failed to read INI settings, check the log for more information."sv);
 	}
-	logger::info("  >Read INI settings."sv);
-
+	logger::info("================================================="sv);
 	if (!Hooks::Install()) {
 		SKSE::stl::report_and_fail("Failed to install necessary hooks, check the log for more information."sv);
 	}
-	logger::info("  >Installed necessary hooks."sv);
+	logger::info("================================================="sv);
 
 	const auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(&MessageEventCallback);

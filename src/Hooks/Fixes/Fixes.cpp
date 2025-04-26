@@ -6,9 +6,10 @@
 namespace Hooks::Fixes
 {
 	bool Install() {
+		logger::info("  >Installing fixes"sv);
 		auto* listener = Listener::GetSingleton();
 		if (!listener) {
-			logger::critical("Failed to get Fixes Listener."sv);
+			logger::critical("    >Failed to get Fixes Listener."sv);
 			return false;
 		}
 		return listener->Install();
@@ -17,26 +18,26 @@ namespace Hooks::Fixes
 	bool Listener::Install() {
 		auto* iniHolder = Settings::INI::Holder::GetSingleton();
 		if (!iniHolder) {
-			logger::info("Failed to fetch INI settings holder for Fixes."sv);
+			logger::info("    >Failed to fetch INI settings holder for Fixes."sv);
 			return false;
 		}
 
 		auto selfAbsorbFixRaw = iniHolder->GetStoredSetting<bool>("Fixes|bNeverAbsorbSelfTargettingEffects");
 		fixSelfTarget = selfAbsorbFixRaw.has_value() ? selfAbsorbFixRaw.value() : true;
 		if (!selfAbsorbFixRaw.has_value()) {
-			logger::warn("  >Self-Target fix setting somehow not specified in the INI, treating as true."sv);
+			logger::warn("    >Self-Target fix setting somehow not specified in the INI, treating as true."sv);
 		}
 
 		auto beneficialFixRaw = iniHolder->GetStoredSetting<bool>("Fixes|bNeverAbsorbBeneficialEffects");
 		fixBeneficial = beneficialFixRaw.has_value() ? beneficialFixRaw.value() : true;
 		if (!beneficialFixRaw.has_value()) {
-			logger::warn("  >Beneficial fix setting somehow not specified in the INI, treating as true."sv);
+			logger::warn("    >Beneficial fix setting somehow not specified in the INI, treating as true."sv);
 		}
 
 		auto poisonFixRaw = iniHolder->GetStoredSetting<bool>("Fixes|bNeverAbsorbPoison");
 		fixPoison = poisonFixRaw.has_value() ? poisonFixRaw.value() : true;
 		if (!poisonFixRaw.has_value()) {
-			logger::warn("  >Poison fix setting somehow not specified in the INI, treating as true."sv);
+			logger::warn("    >Poison fix setting somehow not specified in the INI, treating as true."sv);
 		}
 
 		return Player::Install() && Character::Install();
@@ -109,6 +110,7 @@ namespace Hooks::Fixes
 	bool Listener::Character::Install() {
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::Offset::PlayerCharacter::VTABLE_PlayerCharacterMagicTarget };
 		_func = VTABLE.write_vfunc(0xB, Thunk);
+		logger::info("    >Installed Character Magic Target VFunc hook."sv);
 		return true;
 	}
 
@@ -132,6 +134,7 @@ namespace Hooks::Fixes
 	bool Listener::Player::Install() {
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::Offset::Character::VTABLE_CharacterMagicTarget };
 		_func = VTABLE.write_vfunc(0xB, Thunk);
+		logger::info("    >Installed Player Magic Target VFunc hook."sv);
 		return true;
 	}
 

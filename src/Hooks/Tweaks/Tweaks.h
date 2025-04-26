@@ -34,5 +34,28 @@ namespace Hooks::Tweaks {
 		std::unordered_set<const RE::TESQuest*> blacklistedQuests{};
 	};
 
+	class SpellDispeler :
+		public Utilities::Singleton::ISingleton<SpellDispeler>
+	{
+	public:
+		bool Install();
+		void ApendEffect(const RE::EffectSetting* a_candidate);
+		void ClearDispelableSpells(RE::PlayerCharacter* a_player);
+
+	private:
+		struct PlayerDrawMonitor
+		{
+			static bool Install();
+			static void Thunk(RE::PlayerCharacter* a_this, bool a_draw);
+
+			inline static REL::Relocation<decltype(&Thunk)> _func;
+
+			inline static size_t offset{ 0xA6 };
+			inline static std::string setting{ "Tweaks|bDispelOnSheathe" };
+		};
+
+		std::unordered_set<const RE::EffectSetting*> dispelEffects{};
+	};
+
 	bool Install();
 }

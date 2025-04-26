@@ -14,27 +14,30 @@
 namespace Hooks::Tweaks
 {
 	bool Install() {
+		logger::info("  >Installing Tweaks"sv);
 		auto* extender = EffectExtender::GetSingleton();
 		auto* silencer = CommentSilencer::GetSingleton();
-		if (!extender || !silencer) {
-			logger::critical("Failed to get internal hook listeners."sv);
+		auto* dispeler = SpellDispeler::GetSingleton();
+		if (!extender || !silencer || !dispeler) {
+			logger::critical("    >Failed to get internal hook listeners."sv);
 			return false;
 		}
 		return extender->Install() &&
-			silencer->Install();
+			silencer->Install() &&
+			dispeler->Install();
 	}
 
 	bool EffectExtender::Install() {
 		auto* iniHolder = Settings::INI::Holder::GetSingleton();
 		if (!iniHolder) {
-			logger::info("Failed to fetch INI settings holder for Fixes."sv);
+			logger::info("    >Failed to fetch INI settings holder for Fixes."sv);
 			return false;
 		}
 
 		auto extendInDialogueRaw = iniHolder->GetStoredSetting<bool>("Tweaks|bExtendEffectsInDialogue");
 		extendInDialogue = extendInDialogueRaw.has_value() ? extendInDialogueRaw.value() : false;
 		if (!extendInDialogueRaw.has_value()) {
-			logger::warn("  >Extend In Dialogue tweak setting somehow not specified in the INI, treating as false."sv);
+			logger::warn("    >Extend In Dialogue tweak setting somehow not specified in the INI, treating as false."sv);
 		}
 
 		return Archetypes::BoundEffect::Install() &&
@@ -75,6 +78,8 @@ namespace Hooks::Tweaks
 	}
 
 	bool CommentSilencer::Install() {
+		// While this works, it is not a good solution. The Modern Clap Bugfix is better.
+		/*
 		auto* iniHolder = Settings::INI::Holder::GetSingleton();
 		if (!iniHolder) {
 			logger::critical("Failed to fetch ini settings holder."sv);
@@ -98,6 +103,7 @@ namespace Hooks::Tweaks
 
 		auto& trampoline = SKSE::GetTrampoline();
 		_func = trampoline.write_call<5>(target.address(), &Thunk);
+		*/
 		return true;
 	}
 
@@ -121,5 +127,86 @@ namespace Hooks::Tweaks
 		}
 
 		return RE::ConstructDialogueItem(a_dialogueItem, a_quest, a_topic, a_topicInfo, a_speaker);
+	}
+
+	bool SpellDispeler::Install() {
+		return PlayerDrawMonitor::Install();
+	}
+
+	void SpellDispeler::ApendEffect(const RE::EffectSetting* a_candidate) {
+		if (dispelEffects.contains(a_candidate)) {
+			return;
+		}
+		const std::string proposed = Utilities::EDID::GetEditorID(a_candidate);
+		if (!proposed.empty()) {
+			logger::info("    >{}"sv, proposed);
+		}
+		else {
+			const auto effectName = a_candidate->GetName();
+			if (strcmp(effectName, "") != 0) {
+				logger::info("    >{}"sv, effectName);
+			}
+			else {
+				logger::info("    >[Unnamed Effect]"sv);
+			}
+		}
+		dispelEffects.emplace(a_candidate);
+	}
+
+	void SpellDispeler::ClearDispelableSpells(RE::PlayerCharacter* a_player) {
+		auto* magicTarget = a_player ? a_player->GetMagicTarget() : nullptr;
+		if (!magicTarget || dispelEffects.empty()) {
+			return;
+		}
+
+		auto effectList = magicTarget->GetActiveEffectList();
+		if (effectList->empty()) {
+			return;
+		}
+
+		for (auto activeEffect : *effectList) {
+			const auto* base = activeEffect && activeEffect->effect ?
+				activeEffect->effect->baseEffect : nullptr;
+			if (!base || !dispelEffects.contains(base)) {
+				continue;
+			}
+
+			const float effectDuration = activeEffect->duration;
+			const float setElapsedTime = std::max(effectDuration - 0.1f, 0.1f);
+			activeEffect->elapsedSeconds = setElapsedTime;
+		}
+	}
+
+	bool SpellDispeler::PlayerDrawMonitor::Install() {
+		auto* iniHolder = Settings::INI::Holder::GetSingleton();
+		if (!iniHolder) {
+			logger::critical("    >Failed to fetch ini settings holder for the Seathe monitor."sv);
+			return false;
+		}
+
+		auto installRaw = iniHolder->GetStoredSetting<bool>(setting);
+		bool install = installRaw.has_value() ? installRaw.value() : false;
+		if (!installRaw.has_value()) {
+			logger::warn("    >Setting {} not found in ini settings, treating as false.", setting);
+		}
+		if (!install) {
+			return true;
+		}
+
+		REL::Relocation<std::uintptr_t> VTABLE{ RE::Offset::PlayerCharacter::Vtbl };
+		_func = VTABLE.write_vfunc(offset, Thunk);
+		logger::info("  >Installed Player VFunc hook."sv);
+		return true;
+	}
+
+	void SpellDispeler::PlayerDrawMonitor::Thunk(RE::PlayerCharacter* a_this, 
+		bool a_draw) 
+	{
+		_func(a_this, a_draw);
+		if (!a_draw) {
+			if (auto* dispeler = SpellDispeler::GetSingleton(); dispeler) {
+				dispeler->ClearDispelableSpells(a_this);
+			}
+		}
 	}
 }

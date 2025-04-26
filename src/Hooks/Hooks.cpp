@@ -3,11 +3,14 @@
 #include "Fixes/Fixes.h"
 #include "Tweaks/Tweaks.h"
 
-#include "Settings/INISettings.h"
+// See comment above commented out code.
+// #include "Settings/INISettings.h"
 
 namespace Hooks 
 {
 	bool Install() {
+		// Needed only for the Silencer tweak, that didn't quite meet my standards.
+		/*
 		auto* iniHolder = Settings::INI::Holder::GetSingleton();
 		if (!iniHolder) {
 			logger::critical("Failed to get ini holder."sv);
@@ -22,8 +25,11 @@ namespace Hooks
 
 		size_t allocSize = 0;
 		allocSize += allocateSilencer ? 14 : 0;
-
-		SKSE::AllocTrampoline(allocSize);
+		if (allocSize > 0) {
+			SKSE::AllocTrampoline(allocSize);
+		}
+		*/
+		logger::info("Installing necessary hooks..."sv);
 		return Fixes::Install() && Tweaks::Install();
 	}
 }
