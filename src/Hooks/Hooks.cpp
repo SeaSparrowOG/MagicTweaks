@@ -1,34 +1,35 @@
 #include "Hooks.h"
 
+#include "Fixes/Fixes.h"
+#include "Tweaks/Tweaks.h"
+
+// See comment above commented out code.
+// #include "Settings/INISettings.h"
+
 namespace Hooks 
 {
-	void Install()
-	{
-		logger::info("==========================================================");
-		logger::info("Installing Hooks...");
-		// SKSE::AllocTrampoline(1024);
-		// HookClass::GetSingleton()->Install();
-	}
-
-	void HookClass::Install()
-	{
-		Hook1::Install();
-	}
-
-	void HookClass::Hook1::Install()
-	{
-		logger::info("  >Installing hook 1"sv);
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::Relocation<std::uintptr_t> target{ addressID, offset };
-
-		if (!(REL::make_pattern<"E8">().match(target.address()))) {
-			SKSE::stl::report_and_fail("Failed to match executable's pattern for Hook1, aborting load.");
+	bool Install() {
+		// Needed only for the Silencer tweak, that didn't quite meet my standards.
+		/*
+		auto* iniHolder = Settings::INI::Holder::GetSingleton();
+		if (!iniHolder) {
+			logger::critical("Failed to get ini holder."sv);
+			return false;
 		}
-		_hook = trampoline.write_call<5>(target.address(), &Hook);
-	}
 
-	void HookClass::Hook1::Hook()
-	{
-		_hook();
+		auto installSielencerRaw = iniHolder->GetStoredSetting<bool>("Tweaks|bSuppressMagicComments");
+		bool allocateSilencer = installSielencerRaw.has_value() ? installSielencerRaw.value() : false;
+		if (!installSielencerRaw.has_value()) {
+			logger::warn("  >Failed to get the Tweaks|bSuppressMagicComments setting from the INI."sv);
+		}
+
+		size_t allocSize = 0;
+		allocSize += allocateSilencer ? 14 : 0;
+		if (allocSize > 0) {
+			SKSE::AllocTrampoline(allocSize);
+		}
+		*/
+		logger::info("Installing necessary hooks..."sv);
+		return Fixes::Install() && Tweaks::Install();
 	}
 }

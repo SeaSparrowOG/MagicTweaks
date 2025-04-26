@@ -1,8 +1,8 @@
 {
-  "name": "example-plugin",
+  "name": "magic-tweaks",
   "version-string": "1.0.0",
-  "description": "Template for SKSE plugin built using commonlib. MIT License by default.",
-  "homepage": "",
+  "description": "SKSE plugin that fixes and tweaks magic systems for Skyrim pecial Edition.",
+  "homepage": "https://github.com/SeaSparrowOG/MagicTweaks",
   "license": "MIT",
   "dependencies": [
     "boost-stl-interfaces",
@@ -13,5 +13,5 @@
     "simpleini",
     "xbyak"
   ],
-  "builtin-baseline": "f9a99aa79c1309001e36572fa42d7d8edebfc451"
+  "builtin-baseline": "ea295dff0b3e9e9caeb49d1225dc7272d3231cf1"
 }

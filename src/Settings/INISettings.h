@@ -4,6 +4,8 @@ namespace Settings
 {
 	namespace INI
 	{
+		bool Read();
+
 		class Holder : public Utilities::Singleton::ISingleton<Holder>
 		{
 		public:
