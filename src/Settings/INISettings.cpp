@@ -136,6 +136,7 @@ namespace Settings::INI
 			{"Fixes", "bNeverAbsorbBeneficialEffects"},
 
 			{"Tweaks", "bExtendEffectsInDialogue"},
+			{"Tweaks", "bEarnConjurationHitExp"},
 			{"Tweaks", "bTweakBoundWeapons"},
 			{"Tweaks", "bTweakCloaks"},
 			{"Tweaks", "bTweakLight"},
