@@ -11,6 +11,11 @@
 #include "Hooks/Tweaks/Archetypes/SummonEffect.h"
 #include "Hooks/Tweaks/Archetypes/ValueModifierEffect.h"
 
+#include <xbyak.h>
+
+#undef max
+#undef min
+
 namespace Hooks::Tweaks
 {
 	bool Install() {
@@ -24,7 +29,8 @@ namespace Hooks::Tweaks
 		}
 		return extender->Install() &&
 			silencer->Install() &&
-			dispeler->Install();
+			dispeler->Install() &&
+			ModifySpellReduction::Install();
 	}
 
 	bool EffectExtender::Install() {
@@ -203,8 +209,8 @@ namespace Hooks::Tweaks
 		return true;
 	}
 
-	void SpellDispeler::PlayerDrawMonitor::Thunk(RE::PlayerCharacter* a_this, 
-		bool a_draw) 
+	void SpellDispeler::PlayerDrawMonitor::Thunk(RE::PlayerCharacter* a_this,
+		bool a_draw)
 	{
 		_func(a_this, a_draw);
 		if (!a_draw) {
@@ -212,5 +218,136 @@ namespace Hooks::Tweaks
 				dispeler->ClearDispelableSpells(a_this);
 			}
 		}
+	}
+
+	bool ModifySpellReduction::Install() {
+		auto* iniHolder = Settings::INI::Holder::GetSingleton();
+		if (!iniHolder) {
+			logger::critical("    >Failed to fetch ini settings holder for the Seathe monitor."sv);
+			return false;
+		}
+
+		auto installRaw = iniHolder->GetStoredSetting<bool>(Settings::INI::TWEAK_COST_REDUCTION);
+		bool install = installRaw.has_value() ? installRaw.value() : false;
+		if (!installRaw.has_value()) {
+			logger::warn("    >Setting {} not found in ini settings, treating as false.", Settings::INI::TWEAK_COST_REDUCTION);
+		}
+		if (!install) {
+			return true;
+		}
+
+		auto skillFloorRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_MIN_SKILL);
+		skillFloor = skillFloorRaw.has_value() ? skillFloorRaw.value() : skillFloor;
+
+		auto skillCeillingRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_MAX_SKILL);
+		skillCeilling = skillCeillingRaw.has_value() ? skillCeillingRaw.value() : skillCeilling;
+
+		auto reductionRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_MAX);
+		maxReductionPct = reductionRaw.has_value() ? reductionRaw.value() : maxReductionPct;
+
+		// Thank you FromSoft - er, I mean Nukem
+		struct Patch : Xbyak::CodeGenerator
+		{
+			explicit Patch(uintptr_t OriginalFuncAddr, size_t OriginalByteLength)
+			{
+				for (size_t i = 0; i < OriginalByteLength; i++)
+					db(*reinterpret_cast<uint8_t*>(OriginalFuncAddr + i));
+
+				jmp(qword[rip]);
+				dq(OriginalFuncAddr + OriginalByteLength);
+			}
+		};
+
+		auto& trampoline = SKSE::GetTrampoline();
+		const REL::Relocation<std::uintptr_t> target{ RE::Offset::MagicItem::CalculateCost };
+
+		Patch p(target.address(), 5);
+		p.ready();
+
+		trampoline.write_branch<5>(target.address(), Thunk);
+
+		auto alloc = trampoline.allocate(p.getSize());
+		memcpy(alloc, p.getCode(), p.getSize());
+
+		_func = reinterpret_cast<uintptr_t>(alloc);
+		logger::info("    >Installed Calculate Cost hook."sv);
+		return true;
+	}
+
+	inline float ModifySpellReduction::Thunk(RE::MagicItem* a_spell, RE::Actor* a_actor) {
+		using AMEFlag = RE::EffectSetting::EffectSettingData::Flag;
+		auto* spell = a_spell ? a_spell->As<RE::SpellItem>() : nullptr;
+		if (!spell || !a_actor || !a_actor->As<RE::ActorValueOwner>()) {
+			return _func(a_spell, a_actor);
+		}
+
+		auto* gameSettingCollection = RE::GameSettingCollection::GetSingleton();
+		float magicCasterSkillCostBase = 1.0f;
+		float magicSkillCostScale = 0.0f;
+		float magicCasterPCSkillCostMult = 0.01f;
+		if (gameSettingCollection) {
+			if (a_actor->IsPlayerRef()) {
+				auto* fMagicCasterPCSkillCostBase = gameSettingCollection->GetSetting("fMagicCasterPCSkillCostBase");
+				auto* fMagicPCSkillCostScale = gameSettingCollection->GetSetting("fMagicPCSkillCostScale");
+				auto* fMagicCasterPCSkillCostMult = gameSettingCollection->GetSetting("fMagicCasterPCSkillCostMult");
+				magicCasterSkillCostBase = fMagicCasterPCSkillCostBase ? fMagicCasterPCSkillCostBase->GetFloat() : magicCasterSkillCostBase;
+				magicSkillCostScale = fMagicPCSkillCostScale ? fMagicPCSkillCostScale->GetFloat() : magicSkillCostScale;
+				magicCasterPCSkillCostMult = fMagicCasterPCSkillCostMult ? fMagicCasterPCSkillCostMult->GetFloat() : magicCasterPCSkillCostMult;
+			}
+			else {
+				auto* fMagicCasterSkillCostBase = gameSettingCollection->GetSetting("fMagicCasterSkillCostBase");
+				auto* fMagicSkillCostScale = gameSettingCollection->GetSetting("fMagicSkillCostScale");
+				auto* fMagicCasterSkillCostMult = gameSettingCollection->GetSetting("fMagicCasterSkillCostMult");
+				magicCasterSkillCostBase = fMagicCasterSkillCostBase ? fMagicCasterSkillCostBase->GetFloat() : magicCasterSkillCostBase;
+				magicSkillCostScale = fMagicSkillCostScale ? fMagicSkillCostScale->GetFloat() : magicSkillCostScale;
+				magicCasterPCSkillCostMult = fMagicCasterSkillCostMult ? fMagicCasterSkillCostMult->GetFloat() : magicCasterPCSkillCostMult;
+			}
+
+		}
+
+		float maxCost = 0.0f;
+		float cost = 0.0f;
+		auto* avOwner = a_actor->As<RE::ActorValueOwner>();
+		if (spell->data.flags.any(RE::SpellItem::SpellFlag::kCostOverride)) {
+			cost = static_cast<float>(spell->data.costOverride);
+		}
+		else {
+			auto& effects = a_spell->effects;
+			for (const auto* effect : effects) {
+				auto* base = effect ? effect->baseEffect : nullptr;
+				if (!base || base->data.baseCost <= 0.0f) {
+					continue;
+				}
+
+				auto baseSkill = base->data.associatedSkill;
+				bool adjustCost = false;
+				switch (baseSkill) {
+				case RE::ActorValue::kIllusion:
+				case RE::ActorValue::kConjuration:
+				case RE::ActorValue::kDestruction:
+				case RE::ActorValue::kRestoration:
+				case RE::ActorValue::kAlteration:
+					adjustCost = true;
+					break;
+				default:
+					break;
+				}
+				if (!adjustCost) {
+					continue;
+				}
+
+				float skillLevel = std::clamp(avOwner->GetActorValue(baseSkill), -45.0f, 200.0f);
+				float modulatedBase = powf(magicCasterSkillCostBase * skillLevel, magicSkillCostScale);
+				cost += (1.0f - modulatedBase) * magicCasterPCSkillCostMult * effect->cost;
+				maxCost += effect->cost;
+			}
+		}
+
+		cost = std::max(cost, maxCost * maxReductionPct);
+
+		if (a_actor) {
+			RE::BGSEntryPoint::HandleEntryPoint(RE::BGSEntryPoint::ENTRY_POINT::kModSpellCost, a_actor, a_spell, cost);
+		}
+		return cost;
 	}
 }

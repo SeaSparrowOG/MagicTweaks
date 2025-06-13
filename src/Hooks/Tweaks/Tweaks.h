@@ -57,5 +57,17 @@ namespace Hooks::Tweaks {
 		std::unordered_set<const RE::EffectSetting*> dispelEffects{};
 	};
 
+	struct ModifySpellReduction
+	{
+		inline static bool Install();
+		inline static float Thunk(RE::MagicItem* a_spell, RE::Actor* a_actor);
+		inline static REL::Relocation<decltype(Thunk)> _func;
+
+		inline static float skillFloor{ -45.0f };
+		inline static float skillCeilling{ 200.0f };
+		inline static float skillWeight{ 0.01f };
+		inline static float maxReductionPct{ 0.9f };
+	};
+
 	bool Install();
 }

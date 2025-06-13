@@ -44,5 +44,10 @@ namespace Settings
 			bool VerifySettings();
 			bool OverrideSettings();
 		};
+
+		inline static constexpr const char* TWEAK_COST_REDUCTION = "Tweaks|bTweakCostReduction";
+		inline static constexpr const char* TWEAK_COST_REDUCTION_MAX = "Tweaks|fMaxSpellCostReduction";
+		inline static constexpr const char* TWEAK_COST_REDUCTION_MAX_SKILL = "Tweaks|fMaximumSpellSkill";
+		inline static constexpr const char* TWEAK_COST_REDUCTION_MIN_SKILL = "Tweaks|fMinimumSpellSkill";
 	}
 }

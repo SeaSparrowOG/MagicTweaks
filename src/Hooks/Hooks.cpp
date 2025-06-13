@@ -29,6 +29,10 @@ namespace Hooks
 			SKSE::AllocTrampoline(allocSize);
 		}
 		*/
+
+		size_t allocSize = 128;
+		SKSE::AllocTrampoline(allocSize);
+
 		logger::info("Installing necessary hooks..."sv);
 		return Fixes::Install() && Tweaks::Install();
 	}

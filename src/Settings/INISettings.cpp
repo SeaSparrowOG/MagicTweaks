@@ -137,6 +137,13 @@ namespace Settings::INI
 
 			{"Tweaks", "bExtendEffectsInDialogue"},
 			{"Tweaks", "bEarnConjurationHitExp"},
+			{"Tweaks", "bTweakCostReduction"},
+
+			{"Tweaks", "fMaxSpellCostReduction"},
+			{"Tweaks", "fMaximumSpellSkill"},
+			{"Tweaks", "fMinimumSpellSkill"},
+
+
 			{"Tweaks", "bTweakBoundWeapons"},
 			{"Tweaks", "bTweakCloaks"},
 			{"Tweaks", "bTweakLight"},
