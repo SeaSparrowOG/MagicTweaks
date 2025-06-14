@@ -242,6 +242,9 @@ namespace Hooks::Tweaks
 		auto skillCeillingRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_MAX_SKILL);
 		skillCeilling = skillCeillingRaw.has_value() ? skillCeillingRaw.value() : skillCeilling;
 
+		auto skillWeightRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_WEIGHT);
+		maxReductionPct = skillWeightRaw.has_value() ? skillWeightRaw.value() : maxReductionPct;
+
 		auto reductionRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_MAX);
 		maxReductionPct = reductionRaw.has_value() ? reductionRaw.value() : maxReductionPct;
 
@@ -281,30 +284,6 @@ namespace Hooks::Tweaks
 			return _func(a_spell, a_actor);
 		}
 
-		auto* gameSettingCollection = RE::GameSettingCollection::GetSingleton();
-		float magicCasterSkillCostBase = 1.0f;
-		float magicSkillCostScale = 0.0f;
-		float magicCasterPCSkillCostMult = 0.01f;
-		if (gameSettingCollection) {
-			if (a_actor->IsPlayerRef()) {
-				auto* fMagicCasterPCSkillCostBase = gameSettingCollection->GetSetting("fMagicCasterPCSkillCostBase");
-				auto* fMagicPCSkillCostScale = gameSettingCollection->GetSetting("fMagicPCSkillCostScale");
-				auto* fMagicCasterPCSkillCostMult = gameSettingCollection->GetSetting("fMagicCasterPCSkillCostMult");
-				magicCasterSkillCostBase = fMagicCasterPCSkillCostBase ? fMagicCasterPCSkillCostBase->GetFloat() : magicCasterSkillCostBase;
-				magicSkillCostScale = fMagicPCSkillCostScale ? fMagicPCSkillCostScale->GetFloat() : magicSkillCostScale;
-				magicCasterPCSkillCostMult = fMagicCasterPCSkillCostMult ? fMagicCasterPCSkillCostMult->GetFloat() : magicCasterPCSkillCostMult;
-			}
-			else {
-				auto* fMagicCasterSkillCostBase = gameSettingCollection->GetSetting("fMagicCasterSkillCostBase");
-				auto* fMagicSkillCostScale = gameSettingCollection->GetSetting("fMagicSkillCostScale");
-				auto* fMagicCasterSkillCostMult = gameSettingCollection->GetSetting("fMagicCasterSkillCostMult");
-				magicCasterSkillCostBase = fMagicCasterSkillCostBase ? fMagicCasterSkillCostBase->GetFloat() : magicCasterSkillCostBase;
-				magicSkillCostScale = fMagicSkillCostScale ? fMagicSkillCostScale->GetFloat() : magicSkillCostScale;
-				magicCasterPCSkillCostMult = fMagicCasterSkillCostMult ? fMagicCasterSkillCostMult->GetFloat() : magicCasterPCSkillCostMult;
-			}
-
-		}
-
 		float maxCost = 0.0f;
 		float cost = 0.0f;
 		auto* avOwner = a_actor->As<RE::ActorValueOwner>();
@@ -336,14 +315,13 @@ namespace Hooks::Tweaks
 					continue;
 				}
 
-				float skillLevel = std::clamp(avOwner->GetActorValue(baseSkill), -45.0f, 200.0f);
-				float modulatedBase = powf(magicCasterSkillCostBase * skillLevel, magicSkillCostScale);
-				cost += (1.0f - modulatedBase) * magicCasterPCSkillCostMult * effect->cost;
-				maxCost += effect->cost;
+				float effectCost = effect->cost;
+				cost = 1.0f / (1.0f + skillWeight * avOwner->GetActorValue(baseSkill));
+				maxCost += effectCost;
 			}
 		}
 
-		cost = std::max(cost, maxCost * maxReductionPct);
+		cost = std::max(cost, maxCost * (1.0f - maxReductionPct));
 
 		if (a_actor) {
 			RE::BGSEntryPoint::HandleEntryPoint(RE::BGSEntryPoint::ENTRY_POINT::kModSpellCost, a_actor, a_spell, cost);

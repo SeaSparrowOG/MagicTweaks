@@ -142,6 +142,7 @@ namespace Settings::INI
 			{"Tweaks", "fMaxSpellCostReduction"},
 			{"Tweaks", "fMaximumSpellSkill"},
 			{"Tweaks", "fMinimumSpellSkill"},
+			{"Tweaks", "fCostReductionSkillWeight"},
 
 
 			{"Tweaks", "bTweakBoundWeapons"},
