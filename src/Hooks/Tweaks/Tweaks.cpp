@@ -316,7 +316,8 @@ namespace Hooks::Tweaks
 				}
 
 				float effectCost = effect->cost;
-				cost = 1.0f / (1.0f + skillWeight * avOwner->GetActorValue(baseSkill));
+				float skill = std::clamp(avOwner->GetActorValue(baseSkill), skillFloor, skillCeilling);
+				cost += 1.0f / (1.0f + skillWeight * skill) * effectCost;
 				maxCost += effectCost;
 			}
 		}
