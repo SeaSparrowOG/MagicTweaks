@@ -72,8 +72,8 @@ namespace Settings::INI
 						const double raw = ini.GetDoubleValue(section.pItem, key.pItem);
 						const float value = raw > std::numeric_limits<float>::max() ?
 							std::numeric_limits<float>::max() :
-							raw < std::numeric_limits<float>::min() ?
-								std::numeric_limits<float>::min() :
+							raw < std::numeric_limits<float>::lowest() ?
+								std::numeric_limits<float>::lowest() :
 								static_cast<float>(raw);
 						if (floatSettings.contains(foundSetting)) {
 							logger::error("  >Setting redefinition {}."sv, foundSetting);

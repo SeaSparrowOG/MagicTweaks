@@ -63,7 +63,7 @@ namespace Hooks::Tweaks {
 		inline static float Thunk(RE::MagicItem* a_spell, RE::Actor* a_actor);
 		inline static REL::Relocation<decltype(Thunk)> _func;
 
-		inline static float skillFloor{ -50.0f };
+		inline static float skillFloor{ -45.0f };
 		inline static float skillCeilling{ 200.0f };
 		inline static float skillWeight{ 0.01f };
 		inline static float maxReductionPct{ 0.9f };

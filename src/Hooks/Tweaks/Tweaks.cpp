@@ -243,7 +243,7 @@ namespace Hooks::Tweaks
 		skillCeilling = skillCeillingRaw.has_value() ? skillCeillingRaw.value() : skillCeilling;
 
 		auto skillWeightRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_WEIGHT);
-		maxReductionPct = skillWeightRaw.has_value() ? skillWeightRaw.value() : maxReductionPct;
+		skillWeight = skillWeightRaw.has_value() ? skillWeightRaw.value() : skillWeight;
 
 		auto reductionRaw = iniHolder->GetStoredSetting<float>(Settings::INI::TWEAK_COST_REDUCTION_MAX);
 		maxReductionPct = reductionRaw.has_value() ? reductionRaw.value() : maxReductionPct;
@@ -283,7 +283,8 @@ namespace Hooks::Tweaks
 		if (!spell || !a_actor || !a_actor->As<RE::ActorValueOwner>()) {
 			return _func(a_spell, a_actor);
 		}
-
+		LOG_DEBUG("Call with data: {}/{}/{}"sv, skillFloor, skillCeilling, skillWeight);
+		LOG_DEBUG("  >Spell {} (Original cost: {})"sv, a_spell->GetName(), _func(a_spell, a_actor));
 		float maxCost = 0.0f;
 		float cost = 0.0f;
 		auto* avOwner = a_actor->As<RE::ActorValueOwner>();
@@ -321,12 +322,11 @@ namespace Hooks::Tweaks
 				maxCost += effectCost;
 			}
 		}
-
 		cost = std::max(cost, maxCost * (1.0f - maxReductionPct));
-
 		if (a_actor) {
-			RE::BGSEntryPoint::HandleEntryPoint(RE::BGSEntryPoint::ENTRY_POINT::kModSpellCost, a_actor, a_spell, cost);
+			RE::BGSEntryPoint::HandleEntryPoint(RE::BGSEntryPoint::ENTRY_POINT::kModSpellCost, a_actor, a_spell, &cost);
 		}
+		LOG_DEBUG("  >Finished with cost: {}", cost);
 		return cost;
 	}
 }
