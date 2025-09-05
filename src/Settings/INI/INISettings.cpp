@@ -14,10 +14,10 @@ namespace Settings::INI
 			logger::critical("  >Couldn't get INI settings holder."sv);
 			return false;
 		}
-		return holder->Read();
+		return holder->StoreSettings();
 	}
 
-	bool Holder::Read() {
+	bool Holder::StoreSettings() {
 		bool encounteredError = false;
 
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
@@ -132,6 +132,8 @@ namespace Settings::INI
 			logger::info("Errors were encountered while reading the INI file. See log for more details."sv);
 			return false;
 		}
+
+		OverrideSettings();
 		return true;
 	}
 

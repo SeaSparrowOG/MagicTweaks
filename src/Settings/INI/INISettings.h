@@ -10,10 +10,10 @@ namespace Settings
 			public REX::Singleton<Holder>
 		{
 		public:
-			bool Read();
+			bool StoreSettings();
 
 			template <typename T>
-			std::optional<T> GetStoredSetting(std::string a_settingName) {
+			std::optional<T> GetStoredSetting(const std::string& a_settingName) {
 				if constexpr (std::is_same_v<T, float>) {
 					auto it = floatSettings.find(a_settingName);
 					if (it != floatSettings.end()) return it->second;
@@ -45,10 +45,34 @@ namespace Settings
 			bool OverrideSettings();
 		};
 
-		inline static constexpr const char* FAKE_SETTING = "General|bFakeSetting";
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 1;
+		inline static constexpr const char* FIX_POISON = "Fixes|bNeverAbsorbPoison";
+		inline static constexpr const char* FIX_SELF = "Fixes|bNeverAbsorbSelfTargettingEffects";
+		inline static constexpr const char* FIX_BENEFICIAL = "Fixes|bNeverAbsorbBeneficialEffects";
+
+		inline static constexpr const char* TWEAK_DIALOGUE = "Tweaks|bExtendEffectsInDialogue";
+
+		inline static constexpr const char* TWEAK_DISPEL = "Tweaks|bDispelOnSheathe";
+		inline static constexpr const char* TWEAK_EARN_EXP = "Tweaks|bEarnConjurationHitExp";
+
+		inline static constexpr const char* TWEAK_REDUCTION = "Tweaks|bTweakCostReduction";
+		inline static constexpr const char* TWEAK_REDUCTION_WEIGHT = "Tweaks|fCostReductionSkillWeight";
+		inline static constexpr const char* TWEAK_REDUCTION_MIN = "Tweaks|fMinimumSpellSkill";
+		inline static constexpr const char* TWEAK_REDUCTION_MAX = "Tweaks|fMaximumSpellSkill";
+		inline static constexpr const char* TWEAK_REDUCTION_REDUCTION_MAX = "Tweaks|fMaxSpellCostReduction";
+
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 11;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
-			FAKE_SETTING 
+			FIX_POISON,
+			FIX_SELF,
+			FIX_BENEFICIAL,
+			TWEAK_DIALOGUE,
+			TWEAK_DISPEL,
+			TWEAK_EARN_EXP,
+			TWEAK_REDUCTION,
+			TWEAK_REDUCTION_WEIGHT,
+			TWEAK_REDUCTION_MIN,
+			TWEAK_REDUCTION_MAX,
+			TWEAK_REDUCTION_REDUCTION_MAX
 		};
 	}
 }

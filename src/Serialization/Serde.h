@@ -10,7 +10,7 @@ namespace Serialization
 	void SaveCallback(SKSE::SerializationInterface* a_intfc);
 	void LoadCallback(SKSE::SerializationInterface* a_intfc);
 	void RevertCallback(SKSE::SerializationInterface* a_intfc);
-	
+
 	/// <summary>
 	/// Debug tool. When encountering unexpected RecordTypes, converts them to a readable string (HDEC, STEN, etc).
 	/// </summary>
