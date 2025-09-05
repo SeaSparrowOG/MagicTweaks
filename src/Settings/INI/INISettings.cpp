@@ -1,17 +1,17 @@
 #include "INISettings.h"
 
 #include <SimpleIni.h>
-// I fucking love imports defining macros and imposing them in header files IT IS SO FUCKING FUN SDFHUJIVPAS
 #undef max
 #undef min
 
 namespace Settings::INI
 {
 	bool Read() {
-		logger::info("Reading INI settings:"sv);
+		SECTION_SEPARATOR;
+		logger::info("Reading INI settings..."sv);
 		auto* holder = Holder::GetSingleton();
 		if (!holder) {
-			logger::critical("  >Failed to get INI holder."sv);
+			logger::critical("  >Couldn't get INI settings holder."sv);
 			return false;
 		}
 		return holder->Read();
@@ -19,11 +19,16 @@ namespace Settings::INI
 
 	bool Holder::Read() {
 		bool encounteredError = false;
-        std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
+
+		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
 		CSimpleIniA ini{};
 		size_t settingCount = 0;
+		logger::info("==========================================================");
+		logger::info("Reading and validating INI settings from {}.ini"sv, Plugin::NAME);
 
-		logger::info("  >Expected INI path: {}", iniPath);
+		if constexpr (EXPECTED_COUNT <= 0) {
+			return true;
+		}
 
 		try {
 			ini.SetUnicode();
@@ -33,6 +38,10 @@ namespace Settings::INI
 			ini.GetAllSections(sections);
 
 			if (sections.empty()) {
+				if constexpr (EXPECTED_COUNT > 0) {
+					logger::critical("  >INI has no settings, but expected {}."sv, EXPECTED_COUNT);
+					return false;
+				}
 				return true;
 			}
 
@@ -41,12 +50,18 @@ namespace Settings::INI
 				ini.GetAllKeys(section.pItem, sectionKeys);
 
 				if (sectionKeys.empty()) {
+					logger::warn("  >INI section {} has no settings. This MAY be normal.", section.pItem);
 					continue;
 				}
 
 				settingCount += sectionKeys.size();
 				for (const auto& key : sectionKeys) {
 					const std::string foundSetting = fmt::format<std::string>("{}|{}"sv, section.pItem, key.pItem);
+					if (std::find(EXPECTED_SETTINGS.begin(), EXPECTED_SETTINGS.end(), foundSetting) == EXPECTED_SETTINGS.end()) {
+						logger::critical("  >Unexpected setting found: {}", foundSetting);
+						return false;
+					}
+
 					const auto settingKeyName = std::string(key.pItem);
 					if (settingKeyName.size() < 1) {
 						logger::error("  >Invalid setting in section {}."sv, key.pItem, section.pItem);
@@ -72,9 +87,9 @@ namespace Settings::INI
 						const double raw = ini.GetDoubleValue(section.pItem, key.pItem);
 						const float value = raw > std::numeric_limits<float>::max() ?
 							std::numeric_limits<float>::max() :
-							raw < std::numeric_limits<float>::lowest() ?
-								std::numeric_limits<float>::lowest() :
-								static_cast<float>(raw);
+							raw < std::numeric_limits<float>::min() ?
+							std::numeric_limits<float>::min() :
+							static_cast<float>(raw);
 						if (floatSettings.contains(foundSetting)) {
 							logger::error("  >Setting redefinition {}."sv, foundSetting);
 							encounteredError = true;
@@ -107,87 +122,23 @@ namespace Settings::INI
 			}
 		}
 		catch (std::exception& e) {
-			logger::error("  >Caught exception {} while fetching INI settings.", e.what());
+			logger::error("Caught exception {} while fetching INI settings.", e.what());
 			return false;
 		}
+
+		logger::info("  >Finished reading {} settings.", std::to_string(settingCount));
 
 		if (encounteredError) {
-			logger::critical("  >Errors were encountered while reading the INI file."sv);
+			logger::info("Errors were encountered while reading the INI file. See log for more details."sv);
 			return false;
 		}
-		logger::info("  >Read {} default settings.", std::to_string(settingCount));
-		return VerifySettings();
-	}
-
-	bool Holder::VerifySettings() {
-		struct StoredSetting {
-			std::string section;
-			std::string key;
-
-			StoredSetting(std::string a_section, std::string a_key) {
-				this->section = a_section;
-				this->key = a_key;
-			}
-		};
-
-		const StoredSetting expectedSettings[] = {
-			{"Fixes", "bNeverAbsorbPoison"},
-			{"Fixes", "bNeverAbsorbSelfTargettingEffects"},
-			{"Fixes", "bNeverAbsorbBeneficialEffects"},
-
-			{"Tweaks", "bExtendEffectsInDialogue"},
-			{"Tweaks", "bEarnConjurationHitExp"},
-			{"Tweaks", "bTweakCostReduction"},
-
-			{"Tweaks", "fMaxSpellCostReduction"},
-			{"Tweaks", "fMaximumSpellSkill"},
-			{"Tweaks", "fMinimumSpellSkill"},
-			{"Tweaks", "fCostReductionSkillWeight"},
-
-
-			{"Tweaks", "bTweakBoundWeapons"},
-			{"Tweaks", "bTweakCloaks"},
-			{"Tweaks", "bTweakLight"},
-			{"Tweaks", "bTweakScripts"},
-			{"Tweaks", "bTweakCloaks"},
-			{"Tweaks", "bTweakValue"}
-		};
-
-		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
-		CSimpleIniA ini{};
-		bool iniGood = true;
-
-		logger::info("  >Validating settings..."sv);
-
-		try {
-			ini.SetUnicode();
-			ini.LoadFile(iniPath.data());
-
-			for (const auto& setting : expectedSettings) {
-				if (!ini.KeyExists(setting.section.c_str(), setting.key.c_str())) {
-					iniGood = false;
-					logger::error("  >Missing key {} in section {}"sv, setting.key, setting.section);
-				}
-			}
-		}
-		catch (std::exception& e) {
-			logger::error("  >Caught exception {} while validating ini settings."sv, e.what());
-			return false;
-		}
-
-		if (!iniGood) {
-			logger::info("  >Failed to validate one or more settings."sv);
-			return false;
-		}
-
-		logger::info("  >Validated settings successfully."sv);
-
-		return OverrideSettings();
+		return true;
 	}
 
 	bool Holder::OverrideSettings() {
+		logger::info("==========================================================");
+		logger::info("Checking the custom INI..."sv);
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}_custom.ini)"sv, Plugin::NAME);
-		logger::info("  >Checking custom INI..."sv);
 		if (!std::filesystem::exists(iniPath)) {
 			logger::info("  >Custom INI not found."sv);
 			return true;
@@ -202,6 +153,7 @@ namespace Settings::INI
 			ini.GetAllSections(sections);
 
 			if (sections.empty()) {
+				logger::warn("  >Finished reading Custom INI file, but found no overrides.");
 				return true;
 			}
 
@@ -210,6 +162,7 @@ namespace Settings::INI
 				ini.GetAllKeys(section.pItem, sectionKeys);
 
 				if (sectionKeys.empty()) {
+					logger::warn("  >Custom INI section {} has no settings.", section.pItem);
 					continue;
 				}
 
@@ -232,6 +185,8 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
+
+						logger::info("  >Overrode {} with {}."sv, foundSetting, value);
 						stringSettings[foundSetting] = value;
 					}
 					else if (settingType == "f") {
@@ -245,6 +200,8 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
+
+						logger::info("  >Overrode {} with {}."sv, foundSetting, std::to_string(value));
 						floatSettings[foundSetting] = value;
 					}
 					else if (settingType == "b") {
@@ -252,6 +209,8 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
+
+						logger::info("  >Overrode {} with {}."sv, foundSetting, ini.GetBoolValue(section.pItem, key.pItem));
 						boolSettings[foundSetting] = ini.GetBoolValue(section.pItem, key.pItem);
 					}
 					else if (settingType == "i") {
@@ -260,6 +219,8 @@ namespace Settings::INI
 							logger::error("  >Setting {} not defined in the base INI."sv, foundSetting);
 							continue;
 						}
+
+						logger::info("  >Overrode {} with {}."sv, foundSetting, std::to_string(value));
 						longSettings[foundSetting] = value;
 					}
 					else {
@@ -273,7 +234,6 @@ namespace Settings::INI
 			return false;
 		}
 
-		logger::info("Finished reading INI settings successfully!"sv);
 		return true;
 	}
 }

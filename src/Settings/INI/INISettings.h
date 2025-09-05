@@ -6,7 +6,8 @@ namespace Settings
 	{
 		bool Read();
 
-		class Holder : public Utilities::Singleton::ISingleton<Holder>
+		class Holder :
+			public REX::Singleton<Holder>
 		{
 		public:
 			bool Read();
@@ -41,14 +42,13 @@ namespace Settings
 			std::map<std::string, float>       floatSettings;
 			std::map<std::string, std::string> stringSettings;
 
-			bool VerifySettings();
 			bool OverrideSettings();
 		};
 
-		inline static constexpr const char* TWEAK_COST_REDUCTION = "Tweaks|bTweakCostReduction";
-		inline static constexpr const char* TWEAK_COST_REDUCTION_WEIGHT = "Tweaks|fCostReductionSkillWeight";
-		inline static constexpr const char* TWEAK_COST_REDUCTION_MAX = "Tweaks|fMaxSpellCostReduction";
-		inline static constexpr const char* TWEAK_COST_REDUCTION_MAX_SKILL = "Tweaks|fMaximumSpellSkill";
-		inline static constexpr const char* TWEAK_COST_REDUCTION_MIN_SKILL = "Tweaks|fMinimumSpellSkill";
+		inline static constexpr const char* FAKE_SETTING = "General|bFakeSetting";
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 1;
+		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
+			FAKE_SETTING 
+		};
 	}
 }
