@@ -50,6 +50,12 @@ namespace Settings
 		inline static constexpr const char* FIX_BENEFICIAL = "Fixes|bNeverAbsorbBeneficialEffects";
 
 		inline static constexpr const char* TWEAK_DIALOGUE = "Tweaks|bExtendEffectsInDialogue";
+		inline static constexpr const char* TWEAK_DIALOGUE_WEAPONS = "Tweaks|bTweakBoundWeapons";
+		inline static constexpr const char* TWEAK_DIALOGUE_CLOAKS = "Tweaks|bTweakCloaks";
+		inline static constexpr const char* TWEAK_DIALOGUE_LIGHTS = "Tweaks|bTweakLight";
+		inline static constexpr const char* TWEAK_DIALOGUE_SCRIPTS = "Tweaks|bTweakScripts";
+		inline static constexpr const char* TWEAK_DIALOGUE_SUMMONS = "Tweaks|bTweakSummons";
+		inline static constexpr const char* TWEAK_DIALOGUE_VALUES = "Tweaks|bTweakValue";
 
 		inline static constexpr const char* TWEAK_DISPEL = "Tweaks|bDispelOnSheathe";
 		inline static constexpr const char* TWEAK_EARN_EXP = "Tweaks|bEarnConjurationHitExp";
@@ -60,12 +66,18 @@ namespace Settings
 		inline static constexpr const char* TWEAK_REDUCTION_MAX = "Tweaks|fMaximumSpellSkill";
 		inline static constexpr const char* TWEAK_REDUCTION_REDUCTION_MAX = "Tweaks|fMaxSpellCostReduction";
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 11;
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 17;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			FIX_POISON,
 			FIX_SELF,
 			FIX_BENEFICIAL,
 			TWEAK_DIALOGUE,
+			TWEAK_DIALOGUE_WEAPONS,
+			TWEAK_DIALOGUE_CLOAKS,
+			TWEAK_DIALOGUE_LIGHTS,
+			TWEAK_DIALOGUE_SCRIPTS,
+			TWEAK_DIALOGUE_SUMMONS,
+			TWEAK_DIALOGUE_VALUES,
 			TWEAK_DISPEL,
 			TWEAK_EARN_EXP,
 			TWEAK_REDUCTION,
@@ -74,5 +86,11 @@ namespace Settings
 			TWEAK_REDUCTION_MAX,
 			TWEAK_REDUCTION_REDUCTION_MAX
 		};
+
+		template <typename T>
+		std::optional<T> GetSetting(const std::string& a_settingName) {			
+			auto* holder = Holder::GetSingleton();
+			return holder ? holder->GetStoredSetting<T>(a_settingName) : std::nullopt;
+		}
 	}
 }

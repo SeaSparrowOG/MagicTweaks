@@ -1,20 +1,20 @@
 #include "Data/ModObjectManager.h"
+#include "Events/Events.h"
 #include "Hooks/Hooks.h"
 #include "Papyrus/Papyrus.h"
 #include "Serialization/Serde.h"
 #include "Settings/INI/INISettings.h"
-#include "Settings/JSON/JSONSettings.h"
 
 static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
 	case SKSE::MessagingInterface::kDataLoaded:
-		if (!Settings::JSON::Read()) {
-			SKSE::stl::report_and_fail("Failed to load JSON settings. Check the log for more information."sv);
-		}
-		SECTION_SEPARATOR;
 		if (!Data::PreloadModObjects()) {
 			SKSE::stl::report_and_fail("Failed to preload mod objects. Check the log for more information."sv);
+		}
+		SECTION_SEPARATOR;
+		if (!Events::Register()) {
+			SKSE::stl::report_and_fail("Failed to register events. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		logger::info("Finished startup tasks, enjoy your game!"sv);
@@ -52,7 +52,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 
 	const auto ver = a_skse->RuntimeVersion();
 #ifdef SKYRIM_AE
-	if (ver < SKSE::RUNTIME_1_6_1130) {
+	if (ver < SKSE::RUNTIME_SSE_LATEST) {
 #else
 	if (ver < SKSE::RUNTIME_1_5_39) {
 #endif
@@ -74,7 +74,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 #ifdef SKYRIM_AE
 	const auto ver = a_skse->RuntimeVersion();
-	if (ver < SKSE::RUNTIME_1_6_1130) {
+	if (ver < SKSE::RUNTIME_SSE_LATEST) {
 		return false;
 	}
 #endif
