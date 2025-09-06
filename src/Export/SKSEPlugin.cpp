@@ -4,6 +4,7 @@
 #include "Papyrus/Papyrus.h"
 #include "Serialization/Serde.h"
 #include "Settings/INI/INISettings.h"
+#include "Settings/JSONSettings.h"
 
 static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
@@ -11,6 +12,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:
 		if (!Data::PreloadModObjects()) {
 			SKSE::stl::report_and_fail("Failed to preload mod objects. Check the log for more information."sv);
+		}
+		SECTION_SEPARATOR;
+		if (!Settings::JSON::Read()) {
+			SKSE::stl::report_and_fail("Failed to read JSON settings. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		if (!Events::Register()) {

@@ -12,9 +12,18 @@ namespace Hooks::Tweaks
 		bool success = true;
 		bool installReductionTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION).value_or(false);
 		bool patchEffectsInDialogue = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE).value_or(false);
+		bool installSheatheTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DISPEL).value_or(false);
 
 		if (installReductionTweak) {
 			success &= ModifySpellReduction::PatchSpellReduction();
+		}
+		if (installSheatheTweak) {
+			auto* dispeler = SpellDispeler::GetSingleton();
+			if (!dispeler) {
+				logger::critical("Failed to get internal spell dispeler manager."sv);
+				return false;
+			}
+			success &= dispeler->Install();
 		}
 
 		if (patchEffectsInDialogue) {
@@ -138,4 +147,78 @@ namespace Hooks::Tweaks
 		return cost;
 	}
 
+	bool SpellDispeler::Install() {
+		return PlayerDrawMonitor::Install();
+	}
+
+	void SpellDispeler::ApendEffect(const RE::EffectSetting* a_candidate) {
+		if (dispelEffects.contains(a_candidate)) {
+			return;
+		}
+		const auto effectName = a_candidate->GetName();
+		if (strcmp(effectName, "") != 0) {
+			logger::info("    >{}"sv, effectName);
+		}
+		else {
+			logger::info("    >[Unnamed Effect]"sv);
+		}
+		dispelEffects.emplace(a_candidate);
+	}
+
+	void SpellDispeler::ClearDispelableSpells(RE::PlayerCharacter* a_player) {
+		auto* magicTarget = a_player ? a_player->GetMagicTarget() : nullptr;
+		if (!magicTarget || dispelEffects.empty()) {
+			return;
+		}
+
+		auto effectList = magicTarget->GetActiveEffectList();
+		if (effectList->empty()) {
+			return;
+		}
+
+		for (auto activeEffect : *effectList) {
+			const auto* base = activeEffect && activeEffect->effect ?
+				activeEffect->effect->baseEffect : nullptr;
+			if (!base || !dispelEffects.contains(base)) {
+				continue;
+			}
+
+			const float effectDuration = activeEffect->duration;
+			const float setElapsedTime = std::max(effectDuration - 0.1f, 0.1f);
+			activeEffect->elapsedSeconds = setElapsedTime;
+		}
+	}
+
+	bool SpellDispeler::PlayerDrawMonitor::Install() {
+		auto* iniHolder = Settings::INI::Holder::GetSingleton();
+		if (!iniHolder) {
+			logger::critical("    >Failed to fetch ini settings holder for the Seathe monitor."sv);
+			return false;
+		}
+
+		auto installRaw = iniHolder->GetStoredSetting<bool>(setting);
+		bool install = installRaw.has_value() ? installRaw.value() : false;
+		if (!installRaw.has_value()) {
+			logger::warn("    >Setting {} not found in ini settings, treating as false.", setting);
+		}
+		if (!install) {
+			return true;
+		}
+
+		REL::Relocation<std::uintptr_t> VTABLE{ RE::PlayerCharacter::VTABLE[0] };
+		_func = VTABLE.write_vfunc(offset, Thunk);
+		logger::info("    >Installed Player VFunc hook."sv);
+		return true;
+	}
+
+	void SpellDispeler::PlayerDrawMonitor::Thunk(RE::PlayerCharacter* a_this,
+		bool a_draw)
+	{
+		_func(a_this, a_draw);
+		if (!a_draw) {
+			if (auto* dispeler = SpellDispeler::GetSingleton(); dispeler) {
+				dispeler->ClearDispelableSpells(a_this);
+			}
+		}
+	}
 }
