@@ -13,7 +13,7 @@ namespace Hooks {
 
 		auto tweakReduction = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION);
 		if (tweakReduction && tweakReduction.value()) {
-			allocSize += 14u;
+			allocSize += 33u;
 		}
 		if (allocSize > 0u) {
 			logger::info("  Allocating trampoline size {}"sv, allocSize);
