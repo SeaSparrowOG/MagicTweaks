@@ -55,7 +55,7 @@ namespace Events::HitEvent
 			if (!eventSourceActor->IsPlayerRef()) {
 				return Control::kContinue;
 			}
-			player->ModActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kConjuration, boundWeaponExp);
+			player->AddSkillExperience(RE::ActorValue::kConjuration, minionExp);
 		}
 		else if (eventSourceActor->IsCommandedActor()) {
 			auto commanderHandle = eventSourceActor->GetCommandingActor();

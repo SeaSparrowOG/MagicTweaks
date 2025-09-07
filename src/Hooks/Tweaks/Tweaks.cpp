@@ -1,6 +1,7 @@
 #include "Tweaks.h"
 
 #include "Settings/INI/INISettings.h"
+#include "Settings/JSON/JSONSettings.h"
 
 #include <xbyak.h>
 #undef min
@@ -151,20 +152,6 @@ namespace Hooks::Tweaks
 		return PlayerDrawMonitor::Install();
 	}
 
-	void SpellDispeler::ApendEffect(const RE::EffectSetting* a_candidate) {
-		if (dispelEffects.contains(a_candidate)) {
-			return;
-		}
-		const auto effectName = a_candidate->GetName();
-		if (strcmp(effectName, "") != 0) {
-			logger::info("    >{}"sv, effectName);
-		}
-		else {
-			logger::info("    >[Unnamed Effect]"sv);
-		}
-		dispelEffects.emplace(a_candidate);
-	}
-
 	void SpellDispeler::ClearDispelableSpells(RE::PlayerCharacter* a_player) {
 		auto* magicTarget = a_player ? a_player->GetMagicTarget() : nullptr;
 		if (!magicTarget || dispelEffects.empty()) {
@@ -187,6 +174,64 @@ namespace Hooks::Tweaks
 			const float setElapsedTime = std::max(effectDuration - 0.1f, 0.1f);
 			activeEffect->elapsedSeconds = setElapsedTime;
 		}
+	}
+
+	bool SpellDispeler::LoadJSONSettings() {
+		auto* reader = Settings::JSON::Reader::GetSingleton();
+		if (!reader) {
+			logger::critical("Failed to fetch internal Spell Dispeler singleton."sv);
+			return false;
+		}
+
+		for (const auto& setting : reader->settings) {
+			if (setting.isObject()) {
+				const auto& fieldOfInterest = setting[SheatheArray];
+				if (!fieldOfInterest) {
+					continue;
+				}
+				if (fieldOfInterest.isString()) {
+					auto* form = reader->GetFormFromString<RE::SpellItem>(fieldOfInterest.asString());
+					if (!form || form->effects.empty()) {
+						continue;
+					}
+
+					for (auto* effect : form->effects) {
+						auto* base = effect ? effect->baseEffect : nullptr;
+						if (!base) {
+							continue;
+						}
+						dispelEffects.insert(base);
+					}
+				}
+				else if (fieldOfInterest.isArray()) {
+					for (const auto& formOfInterest : fieldOfInterest) {
+						auto* form = reader->GetFormFromString<RE::SpellItem>(formOfInterest.asString());
+						if (!form || form->effects.empty()) {
+							continue;
+						}
+
+						for (auto* effect : form->effects) {
+							auto* base = effect ? effect->baseEffect : nullptr;
+							if (!base) {
+								continue;
+							}
+							if (dispelEffects.contains(base)) {
+								continue;
+							}
+							LOG_DEBUG("Registered effect to dispel: {}", reader->GetEditorID(base));
+							dispelEffects.insert(base);
+						}
+					}
+				}
+				else {
+					logger::warn("Ran into non-string and non-array object in {}.", SheatheArray);
+				}
+			}
+			else {
+				logger::warn("Ran into top level non-object config, ignoring for Spell Dispeler."sv);
+			}
+		}
+		return true;
 	}
 
 	bool SpellDispeler::PlayerDrawMonitor::Install() {

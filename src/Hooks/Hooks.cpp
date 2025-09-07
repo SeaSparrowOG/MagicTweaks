@@ -30,4 +30,17 @@ namespace Hooks {
 
 		return true;
 	}
+
+	bool ReadSettings() {
+		bool success = true;
+
+		auto* effectDispeler = Tweaks::SpellDispeler::GetSingleton();
+		if (!effectDispeler) {
+			logger::critical("Failed to get internal effect dispeler manager."sv);
+			return false;
+		}
+		success &= effectDispeler->LoadJSONSettings();
+
+		return success;
+	}
 }

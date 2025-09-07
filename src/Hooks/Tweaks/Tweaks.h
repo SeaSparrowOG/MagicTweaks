@@ -20,8 +20,9 @@ namespace Hooks::Tweaks {
 	{
 	public:
 		bool Install();
-		void ApendEffect(const RE::EffectSetting* a_candidate);
 		void ClearDispelableSpells(RE::PlayerCharacter* a_player);
+
+		bool LoadJSONSettings();
 
 	private:
 		struct PlayerDrawMonitor
@@ -36,6 +37,8 @@ namespace Hooks::Tweaks {
 		};
 
 		std::unordered_set<const RE::EffectSetting*> dispelEffects{};
+
+		inline static constexpr const char* SheatheArray = "DispelOnSeathe";
 	};
 
 	template <typename T>

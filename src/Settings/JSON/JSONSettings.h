@@ -8,26 +8,20 @@ namespace Settings
 	{
 		bool Read();
 
-		class Holder : public REX::Singleton<Holder>
+		class Reader : public REX::Singleton<Reader>
 		{
 		public:
 			bool Read();
 
-		private:
-			void ParseEntry(const Json::Value& a_entry, const std::string& a_fileName);
-			void ParseDispelEntry(const Json::Value& a_entry);
+			std::vector<Json::Value> settings{};
 
-			RE::TESDataHandler* dataHandler{ nullptr };
-			const std::string DISPEL_ON_SEATHE_FIELD{ "DispelOnSeathe" };
-
-			std::vector<const RE::EffectSetting*> effectsToDispel{};
-
+			// Helper functions
 			using _GetFormEditorID = const char* (*)(std::uint32_t);
 			std::string GetEditorID(const RE::TESForm* a_form);
 
-			inline std::vector<std::string> split(const std::string& a_str, const std::string& a_delimiter);
-			inline bool is_only_hex(std::string_view a_str, bool a_requirePrefix = true);
-			inline std::string tolower(std::string_view a_str);
+			std::vector<std::string> split(const std::string& a_str, const std::string& a_delimiter);
+			bool is_only_hex(std::string_view a_str, bool a_requirePrefix = true);
+			std::string tolower(std::string_view a_str);
 
 			template <class T>
 			T to_num(const std::string& a_str, bool a_hex = false)
@@ -82,6 +76,13 @@ namespace Settings
 				auto* intermediate = RE::TESForm::LookupByEditorID(a_str);
 				return intermediate ? skyrim_cast<T*>(intermediate) : nullptr;
 			}
+		private:
+			bool ReadConfig(const Json::Value& a_entry);
+
+			RE::TESDataHandler* dataHandler{ nullptr };
 		};
+
+		inline static constexpr std::uint8_t PARSER_VERSION = 1;
+		inline static constexpr const char* MINIMUM_VERSION_FIELD = "MinimumVersion";
 	}
 }

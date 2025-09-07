@@ -4,7 +4,7 @@
 #include "Papyrus/Papyrus.h"
 #include "Serialization/Serde.h"
 #include "Settings/INI/INISettings.h"
-#include "Settings/JSONSettings.h"
+#include "Settings/JSON/JSONSettings.h"
 
 static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
@@ -17,6 +17,14 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		if (!Settings::JSON::Read()) {
 			SKSE::stl::report_and_fail("Failed to read JSON settings. Check the log for more information."sv);
 		}
+		SECTION_SEPARATOR;
+		if (!Hooks::ReadSettings()) {
+			SKSE::stl::report_and_fail("Failed to read hook-related settings. Check the log for more information."sv);
+		}
+
+		//TODO: actually do this correctly
+		Settings::JSON::Reader::GetSingleton()->settings.clear();
+
 		SECTION_SEPARATOR;
 		if (!Events::Register()) {
 			SKSE::stl::report_and_fail("Failed to register events. Check the log for more information."sv);
