@@ -1,16 +1,17 @@
 #pragma once
 
-#include "Events/Events.h"
-
 namespace Events
 {
 	namespace HitEvent
 	{
-		class ConjurationHitManager : public EventClass<ConjurationHitManager, RE::TESHitEvent>
+		bool RegisterHitEvent();
+
+		class ConjurationHitManager : 
+			public REX::Singleton<ConjurationHitManager>,
+			public RE::BSTEventSink<RE::TESHitEvent>
 		{
 		public:
-			inline static std::string setting{ "Tweaks|bEarnConjurationHitExp" };
-			inline static std::string name{ "Conjuration Hit Listener" };
+			bool Register();
 
 		private:
 			RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>*) override;

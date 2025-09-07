@@ -1,44 +1,31 @@
 #pragma once
 
-namespace Hooks::Fixes {
-	class Listener : 
-		public Utilities::Singleton::ISingleton<Listener>
+namespace Hooks 
+{
+	namespace Fixes
 	{
-	public:
-		bool Install();
+		bool InstallFixes();
 
-	private:
 		struct Character
 		{
-			static bool Install();
-			static bool Thunk(RE::MagicTarget* a_this,
+			static bool InstallCharacterFixes();
+			static bool CharacterThunk(RE::MagicTarget* a_this,
 				RE::Actor* a_actor,
 				RE::MagicItem* a_magicItem,
 				const RE::Effect* a_effect);
 
-			inline static REL::Relocation<decltype(&Thunk)> _func;
+			inline static REL::Relocation<decltype(&CharacterThunk)> _func;
 		};
 
 		struct Player
 		{
-			static bool Install();
-			static bool Thunk(RE::MagicTarget* a_this,
+			static bool InstallPlayerFixes();
+			static bool PlayerThunk(RE::MagicTarget* a_this,
 				RE::Actor* a_actor,
 				RE::MagicItem* a_magicItem,
 				const RE::Effect* a_effect);
 
-			inline static REL::Relocation<decltype(&Thunk)> _func;
+			inline static REL::Relocation<decltype(&PlayerThunk)> _func;
 		};
-
-		bool fixPoison{ false };
-		bool fixSelfTarget{ false };
-		bool fixBeneficial{ false };
-
-		bool IgnoreAbsorb(RE::MagicTarget* a_this,
-			RE::Actor* a_actor,
-			RE::MagicItem* a_magicItem,
-			const RE::Effect* a_effect);
-	};
-
-	bool Install();
+	}
 }

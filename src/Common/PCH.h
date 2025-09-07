@@ -2,11 +2,11 @@
 
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
+#include "REX/REX.h"
 
-#include <Include/CLibHelper/CLibHelper.h>
+#include <unordered_set>
 #include <fstream>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <json/json.h>
 
 #include "Plugin.h"
 
@@ -85,3 +85,13 @@ namespace stl {
 // Used as a compile guard in certain templated function (see INISettings.h, if present)
 template <class T>
 inline constexpr bool always_false = false;
+
+#define SECTION_SEPARATOR logger::info("=========================================================="sv)
+
+#ifdef SKYRIM_AE
+#	define OFFSET(se, ae) ae
+#	define OFFSET_3(se, ae, vr) ae
+#else
+#	define OFFSET(se, ae) se
+#	define OFFSET_3(se, ae, vr) se
+#endif

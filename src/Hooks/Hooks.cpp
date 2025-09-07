@@ -1,39 +1,46 @@
-#include "Hooks.h"
+#include "Hooks/hooks.h"
 
-#include "Fixes/Fixes.h"
+#include "Hooks/Fixes/Fixes.h"
 #include "Tweaks/Tweaks.h"
+#include "Settings/INI/INISettings.h"
 
-// See comment above commented out code.
-// #include "Settings/INISettings.h"
-
-namespace Hooks 
-{
+namespace Hooks {
 	bool Install() {
-		// Needed only for the Silencer tweak, that didn't quite meet my standards.
-		/*
-		auto* iniHolder = Settings::INI::Holder::GetSingleton();
-		if (!iniHolder) {
-			logger::critical("Failed to get ini holder."sv);
+		SECTION_SEPARATOR;
+		logger::info("Installing hooks..."sv);
+
+		size_t allocSize = 0u;
+
+		auto tweakReduction = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION);
+		if (tweakReduction && tweakReduction.value()) {
+			allocSize += 33u;
+		}
+		if (allocSize > 0u) {
+			logger::info("  Allocating trampoline size {}"sv, allocSize);
+			SKSE::AllocTrampoline(allocSize);
+		}
+
+		bool success = true;
+		success &= Hooks::Fixes::InstallFixes();
+		success &= Hooks::Tweaks::InstallTweaks();
+		if (!success) {
+			logger::error("Failed to install all hooks, aborting load..."sv);
 			return false;
 		}
 
-		auto installSielencerRaw = iniHolder->GetStoredSetting<bool>("Tweaks|bSuppressMagicComments");
-		bool allocateSilencer = installSielencerRaw.has_value() ? installSielencerRaw.value() : false;
-		if (!installSielencerRaw.has_value()) {
-			logger::warn("  >Failed to get the Tweaks|bSuppressMagicComments setting from the INI."sv);
+		return true;
+	}
+
+	bool ReadSettings() {
+		bool success = true;
+
+		auto* effectDispeler = Tweaks::SpellDispeler::GetSingleton();
+		if (!effectDispeler) {
+			logger::critical("Failed to get internal effect dispeler manager."sv);
+			return false;
 		}
+		success &= effectDispeler->LoadJSONSettings();
 
-		size_t allocSize = 0;
-		allocSize += allocateSilencer ? 14 : 0;
-		if (allocSize > 0) {
-			SKSE::AllocTrampoline(allocSize);
-		}
-		*/
-
-		size_t allocSize = 128;
-		SKSE::AllocTrampoline(allocSize);
-
-		logger::info("Installing necessary hooks..."sv);
-		return Fixes::Install() && Tweaks::Install();
+		return success;
 	}
 }

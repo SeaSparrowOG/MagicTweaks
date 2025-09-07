@@ -1,46 +1,28 @@
 #pragma once
 
-#include <unordered_set>
-
 namespace Hooks::Tweaks {
-	class EffectExtender :
-		public Utilities::Singleton::ISingleton<EffectExtender>
+	bool InstallTweaks();
+
+	struct ModifySpellReduction
 	{
-	public:
-		bool Install();
-		void ExtendEffectIfNecessary(RE::ActiveEffect* a_effect, float a_extension);
+		inline static bool PatchSpellReduction();
+		inline static float ProcessSpellReduction(RE::MagicItem* a_spell, RE::Actor* a_actor);
+		inline static REL::Relocation<decltype(ProcessSpellReduction)> _func;
 
-	private:
-		bool extendInDialogue{ false };
-	};
-
-	class CommentSilencer :
-		public Utilities::Singleton::ISingleton<CommentSilencer>
-	{
-	public:
-		bool Install();
-		void AppendQuest(const RE::TESQuest* a_candidate);
-
-	private:
-		inline static RE::DialogueItem* Thunk(
-			RE::DialogueItem* a_dialogueItem,
-			RE::TESQuest* a_quest,
-			RE::TESTopic* a_topic,
-			RE::TESTopicInfo* a_topicInfo,
-			RE::TESObjectREFR* a_speaker);
-
-		inline static REL::Relocation<decltype(&CommentSilencer::Thunk)> _func;
-
-		std::unordered_set<const RE::TESQuest*> blacklistedQuests{};
+		inline static float skillFloor{ -45.0f };
+		inline static float skillCeilling{ 200.0f };
+		inline static float skillWeight{ 0.01f };
+		inline static float maxReductionPct{ 0.9f };
 	};
 
 	class SpellDispeler :
-		public Utilities::Singleton::ISingleton<SpellDispeler>
+		public REX::Singleton<SpellDispeler>
 	{
 	public:
 		bool Install();
-		void ApendEffect(const RE::EffectSetting* a_candidate);
 		void ClearDispelableSpells(RE::PlayerCharacter* a_player);
+
+		bool LoadJSONSettings();
 
 	private:
 		struct PlayerDrawMonitor
@@ -55,19 +37,47 @@ namespace Hooks::Tweaks {
 		};
 
 		std::unordered_set<const RE::EffectSetting*> dispelEffects{};
+
+		inline static constexpr const char* SheatheArray = "DispelOnSeathe";
 	};
 
-	struct ModifySpellReduction
+	template <typename T>
+	struct ArchetypePatch
 	{
-		inline static bool Install();
-		inline static float Thunk(RE::MagicItem* a_spell, RE::Actor* a_actor);
-		inline static REL::Relocation<decltype(Thunk)> _func;
+		inline static bool Patch()
+		{
+			REL::Relocation<std::uintptr_t> VTABLE{ T::VTABLE[0] };
+			_func = VTABLE.write_vfunc(0x4, Update);
+			return true;
+		}
 
-		inline static float skillFloor{ -45.0f };
-		inline static float skillCeilling{ 200.0f };
-		inline static float skillWeight{ 0.01f };
-		inline static float maxReductionPct{ 0.9f };
+		inline static void Update(T* a_this, float a_delta)
+		{
+			_func(a_this, a_delta);
+			using ActiveEffectFlag = RE::EffectSetting::EffectSettingData::Flag;
+			auto* ui = RE::UI::GetSingleton();
+			if (!ui || !a_this) {
+				return;
+			}
+
+			if (ui->IsMenuOpen(RE::DialogueMenu::MENU_NAME)) {
+				a_this->elapsedSeconds -= a_delta;
+			}
+
+			const auto* caster = a_this->GetCasterActor().get();
+			const auto* target = a_this->GetTargetActor();
+			const auto* base = a_this->effect ? a_this->effect->baseEffect : nullptr;
+			if (!base || !caster || !caster->IsPlayerRef() || !target) {
+				return;
+			}
+
+			if (base->data.flags.any(ActiveEffectFlag::kDetrimental,
+				ActiveEffectFlag::kHostile,
+				ActiveEffectFlag::kNoDuration)) {
+				return;
+			}
+		}
+
+		inline static REL::Relocation<decltype(&Update)> _func;
 	};
-
-	bool Install();
 }
