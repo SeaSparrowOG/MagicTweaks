@@ -66,7 +66,9 @@ namespace Settings
 		inline static constexpr const char* TWEAK_REDUCTION_MAX = "Tweaks|fMaximumSpellSkill";
 		inline static constexpr const char* TWEAK_REDUCTION_REDUCTION_MAX = "Tweaks|fMaxSpellCostReduction";
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 17;
+		inline static constexpr const char* DYNAMIC_SPELL_DESCRIPTIONS = "DynamicSpellDescription|bInstall";
+
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 18;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			FIX_POISON,
 			FIX_SELF,
@@ -84,7 +86,8 @@ namespace Settings
 			TWEAK_REDUCTION_WEIGHT,
 			TWEAK_REDUCTION_MIN,
 			TWEAK_REDUCTION_MAX,
-			TWEAK_REDUCTION_REDUCTION_MAX
+			TWEAK_REDUCTION_REDUCTION_MAX,
+			DYNAMIC_SPELL_DESCRIPTIONS
 		};
 
 		template <typename T>

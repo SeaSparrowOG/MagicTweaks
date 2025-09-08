@@ -1,5 +1,6 @@
 #include "Hooks/hooks.h"
 
+#include "DynamicDescription/DynamicDescription.h"
 #include "Hooks/Fixes/Fixes.h"
 #include "Tweaks/Tweaks.h"
 #include "Settings/INI/INISettings.h"
@@ -15,12 +16,18 @@ namespace Hooks {
 		if (tweakReduction && tweakReduction.value()) {
 			allocSize += 33u;
 		}
+		bool installDynamicDescription = Settings::INI::GetSetting<bool>(Settings::INI::DYNAMIC_SPELL_DESCRIPTIONS).value_or(false);
+		if (installDynamicDescription) {
+			allocSize += 42u; // 3 * 14
+		}
+
 		if (allocSize > 0u) {
 			logger::info("  Allocating trampoline size {}"sv, allocSize);
 			SKSE::AllocTrampoline(allocSize);
 		}
 
 		bool success = true;
+		success &= Hooks::DynamicDescription::InstallDynamicDescriptionPatch();
 		success &= Hooks::Fixes::InstallFixes();
 		success &= Hooks::Tweaks::InstallTweaks();
 		if (!success) {
