@@ -1,0 +1,9 @@
+name: magictweaks
+alias: mgt
+script: SEA_MagicTweaks
+help: Magic Tweaks
+subs:
+  - name: unbindallspells
+    alias: uas
+    func: UnBindAllSpells
+    help: Unbinds all bound spells on the player.

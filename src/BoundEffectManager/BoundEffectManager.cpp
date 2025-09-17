@@ -346,6 +346,41 @@ namespace BoundEffectManager {
 		}
 	}
 
+	int BoundEffectManager::UnBindSpell(RE::MagicItem* a_spell) {
+		if (!a_spell || a_spell->effects.empty()) {
+			return -1;
+		}
+
+		std::unordered_set<RE::EffectSetting*> baseEffects{};
+		for (auto* effect : a_spell->effects) {
+			auto* base = effect ? effect->baseEffect : nullptr;
+			if (base) {
+				baseEffects.insert(base);
+			}
+		}
+
+		RE::ActiveEffect* result = nullptr;
+		int count = -1;
+		for (auto& [effect, binding] : costliestBindings) {
+			if (baseEffects.contains(effect->GetBaseObject())) {
+				result = effect;
+				++count;
+			}
+		}
+
+		if (result) {
+			result->Dispel(false);
+		}
+		return count;
+	}
+
+	bool BoundEffectManager::UnBindAllSpells() {
+		for (auto& [costliest, binding] : costliestBindings) {
+			costliest->Dispel(false);
+		}
+		return costliestBindings.empty();
+	}
+
 	bool BoundEffectManager::HasEnoughOfAttributeToBind(RE::ActorValue a_av, float a_demand) {
 		float theoreticalMax = player->GetBaseActorValue(a_av) +
 			player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, a_av);

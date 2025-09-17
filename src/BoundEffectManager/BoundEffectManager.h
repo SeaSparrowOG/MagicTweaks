@@ -22,6 +22,9 @@ namespace BoundEffectManager
 
 		void UpdateTimePassed(float a_delta);
 
+		int UnBindSpell(RE::MagicItem* a_spell);
+		bool UnBindAllSpells();
+
 		bool Save(SKSE::SerializationInterface* a_intfc) override;
 		bool Load(SKSE::SerializationInterface* a_intfc) override;
 		void Revert(SKSE::SerializationInterface* a_intfc) override;
