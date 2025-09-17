@@ -1,6 +1,8 @@
 #include "Hooks/hooks.h"
 
 #include "DynamicDescription/DynamicDescription.h"
+#include "MagicCaster/MagicCasterHooks.h"
+#include "MagicTarget/MagicTargetHooks.h"
 #include "Hooks/Fixes/Fixes.h"
 #include "Tweaks/Tweaks.h"
 #include "Settings/INI/INISettings.h"
@@ -28,6 +30,8 @@ namespace Hooks {
 
 		bool success = true;
 		success &= Hooks::DynamicDescription::InstallDynamicDescriptionPatch();
+		success &= Hooks::MagicCaster::Install();
+		success &= Hooks::MagicTarget::Install();
 		success &= Hooks::Fixes::InstallFixes();
 		success &= Hooks::Tweaks::InstallTweaks();
 		if (!success) {

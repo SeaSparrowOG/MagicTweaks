@@ -1,3 +1,4 @@
+#include "BoundEffectManager/BoundEffectManager.h"
 #include "Data/ModObjectManager.h"
 #include "Events/Events.h"
 #include "Hooks/Hooks.h"
@@ -28,6 +29,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		SECTION_SEPARATOR;
 		if (!Events::Register()) {
 			SKSE::stl::report_and_fail("Failed to register events. Check the log for more information."sv);
+		}
+		SECTION_SEPARATOR;
+		if (!BoundEffectManager::Initialize()) {
+			SKSE::stl::report_and_fail("Failed to initialize the Bound Effect Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		logger::info("Finished startup tasks, enjoy your game!"sv);
