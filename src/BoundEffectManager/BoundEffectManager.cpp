@@ -136,7 +136,7 @@ namespace BoundEffectManager {
 			bool bindsStamina = base->HasKeyword(bindStaminaKeyword);
 			bool bindsMagicka = base->HasKeyword(bindMagickaKeyword);
 			if (!(bindsHealth || bindsStamina || bindsMagicka) ||
-				!IsBindingEffectApplicable(base, a_dualCast)) 
+				!IsBindingEffectApplicable(base, a_dualCast))
 			{
 				continue;
 			}
@@ -285,6 +285,40 @@ namespace BoundEffectManager {
 			}
 			toClear.clear();
 			costliestBindings.erase(a_effect);
+
+			auto* caster = a_effect->GetCasterActor().get();
+			if (caster) {
+				auto* activeEffects = caster->GetActiveEffectList();
+				if (!activeEffects || activeEffects->empty()) {
+					return;
+				}
+
+				auto spellEffectsCopy = a_effect->spell ? a_effect->spell->effects : RE::BSTArray<RE::Effect*>();
+				if (spellEffectsCopy.empty()) {
+					return;
+				}
+
+				auto* costliestBase = a_effect->GetBaseObject();
+				for (auto it = activeEffects->begin(); it != activeEffects->end(); ++it) {
+					auto* applied = *it;
+					auto* base = applied ? applied->GetBaseObject() : nullptr;
+					if (!base || base == costliestBase || !boundEffects.contains(applied)) {
+						continue;
+					}
+
+					bool found = false;
+					for (auto itCopy = spellEffectsCopy.begin(); !found && itCopy != spellEffectsCopy.end(); ++itCopy) {
+						auto* copyBase = *itCopy ? (*itCopy)->baseEffect : nullptr;
+						if (!copyBase || copyBase != base) {
+							continue;
+						}
+
+						applied->Dispel(false);
+						found = true;
+						spellEffectsCopy.erase(itCopy);
+					}
+				}
+			}
 		}
 		else if (boundEffects.contains(a_effect)) {
 			boundEffects.erase(a_effect);
