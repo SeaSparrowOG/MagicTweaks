@@ -5,7 +5,7 @@
 
 namespace BoundEffectManager
 {
-	bool Initialize() {
+	bool InitializeBoundEffectManager() {
 		SECTION_SEPARATOR;
 		logger::info("Starting up the Bound Effect Manager..."sv);
 		auto* manager = BoundEffectManager::GetSingleton();

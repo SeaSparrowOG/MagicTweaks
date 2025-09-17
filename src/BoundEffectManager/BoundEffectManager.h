@@ -4,7 +4,7 @@
 
 namespace BoundEffectManager
 {
-	bool Initialize();
+	bool InitializeBoundEffectManager();
 
 	class BoundEffectManager final :
 		public REX::Singleton<BoundEffectManager>,
@@ -69,7 +69,7 @@ namespace BoundEffectManager
 		inline static constexpr const RE::ActorValue healthBinding = RE::ActorValue::kHealth;
 	};
 
-	inline static constexpr const char* BindHealthKeywordID = "ARM_KEYW_Framework_BindHealthKeyword";
-	inline static constexpr const char* BindStaminaKeywordID = "ARM_KEYW_Framework_BindStaminaKeyword";
-	inline static constexpr const char* BindMagickaKeywordID = "ARM_KEYW_Framework_BindMagickaKeyword";
+	inline static constexpr const char* BindHealthKeywordID = "MagicBindHealth";
+	inline static constexpr const char* BindStaminaKeywordID = "MagicBindStamina";
+	inline static constexpr const char* BindMagickaKeywordID = "MagicBindMagicka";
 }
