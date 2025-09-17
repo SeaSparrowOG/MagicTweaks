@@ -31,7 +31,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 			SKSE::stl::report_and_fail("Failed to register events. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
-		if (!BoundEffectManager::Initialize()) {
+		if (!BoundEffectManager::InitializeBoundEffectManager()) {
 			SKSE::stl::report_and_fail("Failed to initialize the Bound Effect Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
