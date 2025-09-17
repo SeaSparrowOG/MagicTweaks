@@ -166,7 +166,7 @@ namespace BoundEffectManager {
 	}
 
 	void BoundEffectManager::ProcessEffectAdded(RE::ActiveEffect* a_effect) {
-		if (!a_effect || a_effect->flags.any(RE::ActiveEffect::Flag::kInactive)) {
+		if (!a_effect) {
 			return;
 		}
 		auto* appliedBase = a_effect->GetBaseObject();

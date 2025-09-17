@@ -43,12 +43,14 @@ namespace Hooks::Tweaks
 			}
 			if (patchLights) {
 				success &= ArchetypePatch<RE::LightEffect>::Patch();
+				success &= ArchetypePatch<RE::InvisibilityEffect>::Patch();
 			}
 			if (patchScripts) {
 				success &= ArchetypePatch<RE::ScriptEffect>::Patch();
 			}
 			if (patchValues) {
 				success &= ArchetypePatch<RE::ValueModifierEffect>::Patch();
+				success &= ArchetypePatch<RE::PeakValueModifierEffect>::Patch();
 				success &= ArchetypePatch<RE::DualValueModifierEffect>::Patch();
 			}
 			if (patchSummons) {
