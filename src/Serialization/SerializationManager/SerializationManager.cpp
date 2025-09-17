@@ -37,12 +37,12 @@ namespace Serialization::SerializationManager
 		return true;
 	}
 
-	void ObjectManager::RegisterObject(std::unique_ptr<Serializable>& a_newObject, uint32_t a_recordType) {
+	void ObjectManager::RegisterObject(Serializable* a_newObject, uint32_t a_recordType) {
 #ifndef NDEBUG
 		if (recordObjectMap.contains(a_recordType)) {
 			SKSE::stl::report_and_fail(fmt::format("Tried to serialize object twice."sv));
 		}
 #endif
-		recordObjectMap.emplace(a_recordType, std::move(a_newObject));
+		recordObjectMap.emplace(a_recordType, a_newObject);
 	}
 }

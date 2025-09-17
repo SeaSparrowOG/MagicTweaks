@@ -53,12 +53,11 @@ namespace BoundEffectManager
 		}
 
 		auto* serdeManager = Serialization::SerializationManager::ObjectManager::GetSingleton();
-		auto ptr = std::unique_ptr<Serialization::SerializationManager::Serializable>(this);
-		if (!ptr || !serdeManager) {
+		if (!serdeManager) {
 			logger::critical("  Failed to register self as a serializable form."sv);
 			return false;
 		}
-		serdeManager->RegisterObject(ptr, RecordType);
+		serdeManager->RegisterObject(this, RecordType);
 		return true;
 	}
 
@@ -306,8 +305,8 @@ namespace BoundEffectManager {
 			queued = true;
 			auto* taskInterface = SKSE::GetTaskInterface();
 			if (taskInterface) {
-				taskInterface->AddTask([&]() {
-					UpdateUI();
+				taskInterface->AddTask([self = this]() {
+					self->UpdateUI();
 					});
 			}
 		}

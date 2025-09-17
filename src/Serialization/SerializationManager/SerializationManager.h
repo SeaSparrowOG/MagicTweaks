@@ -35,10 +35,10 @@ namespace Serialization
 			bool Load(SKSE::SerializationInterface* a_intfc);
 			bool Revert(SKSE::SerializationInterface* a_intfc);
 
-			void RegisterObject(std::unique_ptr<Serializable>& a_newObject, uint32_t a_recordType);
+			void RegisterObject(Serializable* a_newObject, uint32_t a_recordType);
 
 		private:
-			std::unordered_map<uint32_t, std::unique_ptr<Serializable>> recordObjectMap{};
+			std::unordered_map<uint32_t, Serializable*> recordObjectMap{};
 		};
 	}
 }
