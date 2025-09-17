@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BoundEffectManager/BoundEffectManager.h"
+
 namespace Hooks::Tweaks {
 	bool InstallTweaks();
 
@@ -54,14 +56,21 @@ namespace Hooks::Tweaks {
 		inline static void Update(T* a_this, float a_delta)
 		{
 			_func(a_this, a_delta);
+			if (auto* boundManager = BoundEffectManager::BoundEffectManager::GetSingleton(); 
+				boundManager && boundManager->IsBoundEffect(a_this))
+			{
+				a_this->elapsedSeconds -= a_delta;
+				return;
+			}
+
 			using ActiveEffectFlag = RE::EffectSetting::EffectSettingData::Flag;
 			auto* ui = RE::UI::GetSingleton();
 			if (!ui || !a_this) {
 				return;
 			}
 
-			if (ui->IsMenuOpen(RE::DialogueMenu::MENU_NAME)) {
-				a_this->elapsedSeconds -= a_delta;
+			if (!ui->IsMenuOpen(RE::DialogueMenu::MENU_NAME)) {
+				return;
 			}
 
 			const auto* caster = a_this->GetCasterActor().get();
@@ -76,6 +85,8 @@ namespace Hooks::Tweaks {
 				ActiveEffectFlag::kNoDuration)) {
 				return;
 			}
+
+			a_this->elapsedSeconds -= a_delta;
 		}
 
 		inline static REL::Relocation<decltype(&Update)> _func;
