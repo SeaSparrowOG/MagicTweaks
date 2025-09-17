@@ -3,6 +3,7 @@
 #include "DynamicDescription/DynamicDescription.h"
 #include "MagicCaster/MagicCasterHooks.h"
 #include "MagicTarget/MagicTargetHooks.h"
+#include "PlayerCharacter/PlayerCharacterHooks.h"
 #include "Hooks/Fixes/Fixes.h"
 #include "Tweaks/Tweaks.h"
 #include "Settings/INI/INISettings.h"
@@ -30,6 +31,7 @@ namespace Hooks {
 
 		bool success = true;
 		success &= Hooks::DynamicDescription::InstallDynamicDescriptionPatch();
+		success &= Hooks::PlayerCharacter::Install();
 		success &= Hooks::MagicCaster::Install();
 		success &= Hooks::MagicTarget::Install();
 		success &= Hooks::Fixes::InstallFixes();
