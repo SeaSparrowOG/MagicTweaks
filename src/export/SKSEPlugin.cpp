@@ -1,4 +1,5 @@
 #include "BoundEffectManager/BoundEffectManager.h"
+#include "ConditionManager/ConditionManager.h"
 #include "Data/ModObjectManager.h"
 #include "Events/Events.h"
 #include "Hooks/Hooks.h"
@@ -18,6 +19,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		SECTION_SEPARATOR;
 		if (!Settings::JSON::Read()) {
 			SKSE::stl::report_and_fail("Failed to read JSON settings. Check the log for more information."sv);
+		}
+		SECTION_SEPARATOR;
+		if (!ConditionManager::Initialize()) {
+			SKSE::stl::report_and_fail("Failed to initialize the Condition Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		if (!Hooks::ReadSettings()) {

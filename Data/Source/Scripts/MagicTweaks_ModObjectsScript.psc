@@ -3,3 +3,10 @@ Scriptname MagicTweaks_ModObjectsScript
 Keyword Property MagicBindHealth Auto
 Keyword Property MagicBindStamina Auto
 Keyword Property MagicBindMagicka Auto
+
+Ammo Property MGT_PRXY_CommandedConjurationCount Auto
+Ammo Property MGT_PRXY_CommandedConjurationSummon Auto
+Ammo Property MGT_PRXY_CommandedConjurationReanimated Auto
+Ammo Property MGT_PRXY_CommandedConjurationFire Auto
+Ammo Property MGT_PRXY_CommandedConjurationFrost Auto
+Ammo Property MGT_PRXY_CommandedConjurationShock Auto

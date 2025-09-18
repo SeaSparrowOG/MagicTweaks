@@ -1,5 +1,6 @@
 #include "Hooks/hooks.h"
 
+#include "Conditions/ConditionHooks.h"
 #include "DynamicDescription/DynamicDescription.h"
 #include "MagicCaster/MagicCasterHooks.h"
 #include "MagicTarget/MagicTargetHooks.h"
@@ -16,11 +17,15 @@ namespace Hooks {
 
 		auto tweakReduction = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION);
 		if (tweakReduction && tweakReduction.value()) {
-			allocSize += 33u;
+			allocSize += 33u; // 2 * 14 + 5
 		}
 		bool installDynamicDescription = Settings::INI::GetSetting<bool>(Settings::INI::DYNAMIC_SPELL_DESCRIPTIONS).value_or(false);
 		if (installDynamicDescription) {
 			allocSize += 42u; // 3 * 14
+		}
+		bool installConditionPatch = Settings::INI::GetSetting<bool>(Settings::INI::ADDITIONAL_CONDITIONS).value_or(false);
+		if (installConditionPatch) {
+			allocSize += 14u; // 1 * 14
 		}
 
 		if (allocSize > 0u) {
@@ -29,6 +34,7 @@ namespace Hooks {
 		}
 
 		bool success = true;
+		success &= Hooks::Conditions::Install();
 		success &= Hooks::DynamicDescription::InstallDynamicDescriptionPatch();
 		success &= Hooks::PlayerCharacter::Install();
 		success &= Hooks::MagicCaster::Install();

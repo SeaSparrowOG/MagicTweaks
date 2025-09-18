@@ -63,7 +63,7 @@ namespace Data
 		vm->ResetAllBoundObjects(handle);
 		logger::info("  >Found {} Mod Objects."sv, properties.size());
 		logger::info("Done."sv);
-		return true;
+		return Verify();
 	}
 
 	RE::TESForm* ModObjectManager::Get(std::string_view a_key) const {
@@ -71,6 +71,21 @@ namespace Data
 			return it->second;
 		}
 		SKSE::stl::report_and_fail(fmt::format("Mod Object {} was requested, but was not found."sv, a_key));
+	}
+
+	bool ModObjectManager::Verify() {
+		logger::info("Verifying discovered objects:"sv);
+		bool foundAll = true;
+		for (const auto* objectName : EXPECTED_OBJECTS) {
+			if (!objects.contains(std::string(objectName))) {
+				foundAll = false;
+				logger::critical("  >Failed to find {}.", objectName);
+			}
+			else {
+				logger::info("  >Found {}", objectName);
+			}
+		}
+		return foundAll;
 	}
 
 	bool PreloadModObjects() {

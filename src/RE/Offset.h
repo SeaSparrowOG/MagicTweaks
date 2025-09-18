@@ -2,8 +2,8 @@
 
 namespace RE::Offset
 {
-	namespace Example
+	namespace TESObjectREFR
 	{
-		constexpr auto FunctionName = REL::ID(55976);
+		constexpr auto GetItemCount = REL::ID(21435);
 	}
 }
