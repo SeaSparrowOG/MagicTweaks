@@ -12,7 +12,7 @@ namespace Hooks::Tweaks
 	bool InstallTweaks() {
 		bool success = true;
 		bool installReductionTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION).value_or(false);
-		bool patchEffectsInDialogue = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE).value_or(false);
+		g_extendInDialogue = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE).value_or(false);
 		bool installSheatheTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DISPEL).value_or(false);
 
 		if (installReductionTweak) {
@@ -27,38 +27,20 @@ namespace Hooks::Tweaks
 			success &= dispeler->Install();
 		}
 
-		if (patchEffectsInDialogue) {
-			bool patchCloaks = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE_CLOAKS).value_or(false);
-			bool patchWeapons = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE_WEAPONS).value_or(false);
-			bool patchLights = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE_LIGHTS).value_or(false);
-			bool patchScripts = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE_SCRIPTS).value_or(false);
-			bool patchValues = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE_VALUES).value_or(false);
-			bool patchSummons = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE_SUMMONS).value_or(false);
-
-			if (patchCloaks) {
-				success &= ArchetypePatch<RE::CloakEffect>::Patch();
-			}
-			if (patchWeapons) {
-				success &= ArchetypePatch<RE::BoundItemEffect>::Patch();
-			}
-			if (patchLights) {
-				success &= ArchetypePatch<RE::LightEffect>::Patch();
-				success &= ArchetypePatch<RE::InvisibilityEffect>::Patch();
-			}
-			if (patchScripts) {
-				success &= ArchetypePatch<RE::ScriptEffect>::Patch();
-			}
-			if (patchValues) {
-				success &= ArchetypePatch<RE::ValueModifierEffect>::Patch();
-				success &= ArchetypePatch<RE::PeakValueModifierEffect>::Patch();
-				success &= ArchetypePatch<RE::DualValueModifierEffect>::Patch();
-			}
-			if (patchSummons) {
-				success &= ArchetypePatch<RE::CommandEffect>::Patch();
-				success &= ArchetypePatch<RE::CommandSummonedEffect>::Patch();
-				success &= ArchetypePatch<RE::SummonCreatureEffect>::Patch();
-			}
-		}
+		success &= ArchetypePatch<RE::CloakEffect>::Patch();
+		success &= ArchetypePatch<RE::BoundItemEffect>::Patch();
+		success &= ArchetypePatch<RE::LightEffect>::Patch();
+		success &= ArchetypePatch<RE::InvisibilityEffect>::Patch();
+		success &= ArchetypePatch<RE::ScriptEffect>::Patch();
+		success &= ArchetypePatch<RE::ValueModifierEffect>::Patch();
+		success &= ArchetypePatch<RE::PeakValueModifierEffect>::Patch();
+		success &= ArchetypePatch<RE::DualValueModifierEffect>::Patch();
+		success &= ArchetypePatch<RE::CommandEffect>::Patch();
+		success &= ArchetypePatch<RE::CommandSummonedEffect>::Patch();
+		success &= ArchetypePatch<RE::SummonCreatureEffect>::Patch();
+		success &= ArchetypePatch<RE::CalmEffect>::Patch();
+		success &= ArchetypePatch<RE::DemoralizeEffect>::Patch();
+		success &= ArchetypePatch<RE::FrenzyEffect>::Patch();
 
 		return success;
 	}

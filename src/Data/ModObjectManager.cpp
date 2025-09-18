@@ -74,7 +74,6 @@ namespace Data
 	}
 
 	bool PreloadModObjects() {
-		SECTION_SEPARATOR;
 		logger::info("Preloading Mod Objects..."sv);
 		auto* objectManager = ModObjectManager::GetSingleton();
 		if (!objectManager) {

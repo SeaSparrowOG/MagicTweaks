@@ -3,6 +3,8 @@
 #include "BoundEffectManager/BoundEffectManager.h"
 
 namespace Hooks::Tweaks {
+	inline bool g_extendInDialogue = false;
+
 	bool InstallTweaks();
 
 	struct ModifySpellReduction
@@ -56,6 +58,10 @@ namespace Hooks::Tweaks {
 		inline static void Update(T* a_this, float a_delta)
 		{
 			_func(a_this, a_delta);
+			if (!a_this) {
+				return;
+			}
+
 			if (auto* boundManager = BoundEffectManager::BoundEffectManager::GetSingleton(); 
 				boundManager && boundManager->IsBoundEffect(a_this))
 			{
@@ -63,9 +69,13 @@ namespace Hooks::Tweaks {
 				return;
 			}
 
+			if (!g_extendInDialogue) {
+				return;
+			}
+
 			using ActiveEffectFlag = RE::EffectSetting::EffectSettingData::Flag;
 			auto* ui = RE::UI::GetSingleton();
-			if (!ui || !a_this) {
+			if (!ui) {
 				return;
 			}
 

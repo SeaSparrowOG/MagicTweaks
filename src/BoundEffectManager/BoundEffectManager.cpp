@@ -2,11 +2,11 @@
 
 #include "Data/ModObjectManager.h"
 #include "Serialization/Serde.h"
+#include "Settings/INI/INISettings.h"
 
 namespace BoundEffectManager
 {
 	bool InitializeBoundEffectManager() {
-		SECTION_SEPARATOR;
 		logger::info("Starting up the Bound Effect Manager..."sv);
 		auto* manager = BoundEffectManager::GetSingleton();
 		if (!manager) {
@@ -18,6 +18,11 @@ namespace BoundEffectManager
 
 	bool BoundEffectManager::Initialize() {
 		logger::info("  >Caching game forms..."sv);
+
+		enabled = Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS).value_or(false);
+		if (!enabled) {
+			return true;
+		}
 
 		bool nominal = true;
 		player = RE::PlayerCharacter::GetSingleton();
@@ -117,6 +122,10 @@ namespace BoundEffectManager
 
 namespace BoundEffectManager {
 	bool BoundEffectManager::CanCastSpell(RE::MagicItem* a_spell, bool a_dualCast) {
+		if (!enabled) {
+			return true;
+		}
+
 		auto* spellItem = a_spell ? a_spell->As<RE::SpellItem>() : nullptr;
 		if (!spellItem || spellItem->effects.empty()) {
 			return true;
@@ -166,7 +175,7 @@ namespace BoundEffectManager {
 	}
 
 	void BoundEffectManager::ProcessEffectAdded(RE::ActiveEffect* a_effect) {
-		if (!a_effect) {
+		if (!enabled || !a_effect) {
 			return;
 		}
 		auto* appliedBase = a_effect->GetBaseObject();
@@ -331,7 +340,7 @@ namespace BoundEffectManager {
 
 	void BoundEffectManager::UpdateTimePassed(float a_delta) {
 		timeElapsed += abs(a_delta); // this is unecessary, delta is always positive.
-		if (timeElapsed >= 0.3f) {
+		if (timeElapsed >= 1.0f) {
 			if (queued) {
 				timeElapsed = 0.0f;
 				return;
@@ -409,6 +418,10 @@ namespace BoundEffectManager {
 	}
 
 	void BoundEffectManager::UpdateUI() {
+		if (!enabled) {
+			return;
+		}
+
 		float baseHealth = player->GetBaseActorValue(RE::ActorValue::kHealth);
 		float currentHealth = baseHealth +
 			player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kHealth);

@@ -52,6 +52,7 @@ namespace BoundEffectManager
 			}
 		};
 
+		bool enabled{ false };
 		bool queued{ false };
 		float timeElapsed{ 0.0f };
 		float totalHealthBound{ 0.0f };

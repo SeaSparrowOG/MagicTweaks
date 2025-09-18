@@ -7,7 +7,6 @@
 namespace Settings::INI
 {
 	bool Read() {
-		SECTION_SEPARATOR;
 		logger::info("Reading INI settings..."sv);
 		auto* holder = Holder::GetSingleton();
 		if (!holder) {
@@ -23,7 +22,6 @@ namespace Settings::INI
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)"sv, Plugin::NAME);
 		CSimpleIniA ini{};
 		size_t settingCount = 0;
-		logger::info("==========================================================");
 		logger::info("Reading and validating INI settings from {}.ini"sv, Plugin::NAME);
 
 		if constexpr (EXPECTED_COUNT <= 0) {
@@ -134,11 +132,30 @@ namespace Settings::INI
 		}
 
 		OverrideSettings();
+		DumpSettings();
 		return true;
 	}
 
+	void Holder::DumpSettings()
+	{
+		logger::info("Stored Settings:"sv);
+		for (const auto* setting : EXPECTED_SETTINGS) {
+			if (stringSettings.contains(setting)) {
+				logger::info("  >{}: {}", setting, stringSettings.at(setting));
+			}
+			else if (floatSettings.contains(setting)) {
+				logger::info("  >{}: {}", setting, floatSettings.at(setting));
+			}
+			else if (boolSettings.contains(setting)) {
+				logger::info("  >{}: {}", setting, boolSettings.at(setting));
+			}
+			else if (longSettings.contains(setting)) {
+				logger::info("  >{}: {}", setting, longSettings.at(setting));
+			}
+		}
+	}
+
 	bool Holder::OverrideSettings() {
-		logger::info("==========================================================");
 		logger::info("Checking the custom INI..."sv);
 		std::string iniPath = fmt::format(R"(.\Data\SKSE\Plugins\{}_custom.ini)"sv, Plugin::NAME);
 		if (!std::filesystem::exists(iniPath)) {

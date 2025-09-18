@@ -10,7 +10,6 @@
 
 namespace Hooks {
 	bool Install() {
-		SECTION_SEPARATOR;
 		logger::info("Installing hooks..."sv);
 
 		size_t allocSize = 0u;
