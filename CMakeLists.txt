@@ -42,6 +42,7 @@ endif()
 SKSEPlugin_Add(
 	${PROJECT_NAME}
 	SOURCE_DIR src
+	INCLUDE_DIR include
 	SOURCES
 		README.md
 		vcpkg.json

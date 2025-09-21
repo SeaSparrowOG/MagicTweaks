@@ -3,6 +3,7 @@
 #include "Conditions/ConditionHooks.h"
 #include "DynamicDescription/DynamicDescription.h"
 #include "MagicCaster/MagicCasterHooks.h"
+#include "MagickaShield/MagickaShield.h"
 #include "MagicTarget/MagicTargetHooks.h"
 #include "PlayerCharacter/PlayerCharacterHooks.h"
 #include "Hooks/Fixes/Fixes.h"
@@ -27,6 +28,10 @@ namespace Hooks {
 		if (installConditionPatch) {
 			allocSize += 14u; // 1 * 14
 		}
+		bool installMagickaShield = Settings::INI::GetSetting<bool>(Settings::INI::MAGICKA_SHIELD).value_or(false);
+		if (installMagickaShield) {
+			allocSize += 33u; // 2 * 14 + 5
+		}
 
 		if (allocSize > 0u) {
 			logger::info("  Allocating trampoline size {}"sv, allocSize);
@@ -41,6 +46,7 @@ namespace Hooks {
 		success &= Hooks::MagicTarget::Install();
 		success &= Hooks::Fixes::InstallFixes();
 		success &= Hooks::Tweaks::InstallTweaks();
+		success &= Hooks::MagickaShield::InstallMagickaShield();
 		if (!success) {
 			logger::error("Failed to install all hooks, aborting load..."sv);
 			return false;
