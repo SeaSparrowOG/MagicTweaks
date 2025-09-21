@@ -7,13 +7,14 @@ namespace AVManager
 {
 	RE::ActorValue GetMagickaShieldAV()
 	{
-		auto* intfc = AVG::API::RequestInterface<AVG::API::CurrentInterface>();
-		if (intfc) {
-			auto extraVal = AVG::ExtraValue(g_magickaShieldAV);
-			auto av =  intfc->ResolveExtraValue(extraVal);
-			if (av != RE::ActorValue::kNone && av != RE::ActorValue::kTotal) {
-				return av;
-			}
+		auto avg = REX::W32::GetModuleHandleA(AVG_API_SOURCE);
+		if (avg == nullptr) {
+			return RE::ActorValue::kVoiceRate;
+		}
+
+		RE::ActorValue av = AVG::ExtraValue(g_magickaShieldAV);
+		if (av != RE::ActorValue::kNone) {
+			return av;
 		}
 		return RE::ActorValue::kVoiceRate;
 	}

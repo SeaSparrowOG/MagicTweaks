@@ -1,0 +1,6 @@
+[MagickaShield]
+type = "Adaptive"
+alias = "VoiceRate"
+
+[Include]
+"MagicTweaks.esl" = ["MagickaShield"]

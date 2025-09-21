@@ -4,5 +4,5 @@ namespace AVManager
 {
 	RE::ActorValue GetMagickaShieldAV();
 
-	inline static constexpr const char* g_magickaShieldAV = "MagickaShield";
+	inline static constexpr std::string_view g_magickaShieldAV = "MagickaShield";
 }
