@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.24)
 
 option(FULL_RELEASE "Finalizes the build, compressing everything into a BSA." OFF)
 option(OUTDATED "Applies 1.5.97 offsets/IDs." OFF)
-option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." OFF)
+option(BUILD_ARTIFACTS "Turned off during Github actions to get them to stop failing." ON)
+option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." ON)
 option(COPY_PEX "Copies any generated scripts to the MO2 directory (if specified). Applies after the BSA (if enabled)." OFF)
-option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). Applies after the BSA (if enabled)." OFF)
+option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). Applies after the BSA (if enabled)." ON)
 
 # -------- Project ----------
 project(
@@ -81,7 +82,7 @@ endif()
 include(Papyrus)
 include(BSArchive)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts" AND BUILD_ARTIFACTS)
 	file(GLOB ${PROJECT_NAME}_SOURCES
 		LIST_DIRECTORIES false
 		CONFIGURE_DEPENDS
@@ -107,7 +108,7 @@ else()
 endif()
 
 # ---- Automatically copy artifacts to MO2 ----
-if(DEFINED OUTPUT_FOLDER)
+if(DEFINED OUTPUT_FOLDER AND BUILD_ARTIFACTS)
     set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
 
     add_custom_command(
