@@ -339,6 +339,10 @@ namespace BoundEffectManager {
 	}
 
 	void BoundEffectManager::UpdateTimePassed(float a_delta) {
+		if (!Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS_UI).value_or(false)) {
+			return;
+		}
+
 		timeElapsed += abs(a_delta); // this is unecessary, delta is always positive.
 		if (timeElapsed >= 1.0f) {
 			if (queued) {
