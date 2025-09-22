@@ -38,6 +38,12 @@ namespace Hooks::MagickaShield
 		auto& trampoline = SKSE::GetTrampoline();
 		const REL::Relocation<std::uintptr_t> target{ RE::Offset::Actor::DoDamage };
 
+		if (REL::make_pattern<"E9">().match(target.address())) {
+			logger::warn("    >Unexpected match - E9. Writing branch instead."sv);
+			_hitActor = trampoline.write_branch<5>(target.address(), ApplyMagickaShield);
+			return true;
+		}
+
 		Patch p(target.address(), 5);
 		p.ready();
 
