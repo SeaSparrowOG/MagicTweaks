@@ -1,10 +1,14 @@
 #include "Events.h"
 
+#include "CombatEvent/CombatEvent.h"
 #include "HitEvent/HitEvent.h"
 
 namespace Events
 {
 	bool Register() {
-		return HitEvent::RegisterHitEvent();
+		bool success = HitEvent::RegisterHitEvent();
+		success &= CombatEvent::RegisterCombatEvent();
+
+		return success;
 	}
 }

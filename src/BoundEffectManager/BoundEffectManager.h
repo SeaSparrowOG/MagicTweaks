@@ -25,6 +25,8 @@ namespace BoundEffectManager
 		int UnBindSpell(RE::MagicItem* a_spell);
 		bool UnBindAllSpells();
 
+		void GainExperience();
+
 		bool Save(SKSE::SerializationInterface* a_intfc) override;
 		bool Load(SKSE::SerializationInterface* a_intfc) override;
 		void Revert(SKSE::SerializationInterface* a_intfc) override;

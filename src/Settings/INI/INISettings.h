@@ -71,9 +71,10 @@ namespace Settings
 		inline static constexpr const char* DYNAMIC_SPELL_DESCRIPTIONS = "Dynamic Spell Description|bInstall";
 		inline static constexpr const char* BOUND_SPELLS = "Bound Spells|bInstall";
 		inline static constexpr const char* BOUND_SPELLS_UI = "Bound Spells|bShowInUI";
+		inline static constexpr const char* BOUND_SPELLS_EXP = "Bound Spells|bEarnExperienceInCombat";
 		inline static constexpr const char* MAGICKA_SHIELD = "Magicka Shield|bInstall";
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 22;
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 23;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			FIX_POISON,
 			FIX_SELF,
@@ -96,6 +97,7 @@ namespace Settings
 			DYNAMIC_SPELL_DESCRIPTIONS,
 			BOUND_SPELLS,
 			BOUND_SPELLS_UI,
+			BOUND_SPELLS_EXP,
 			MAGICKA_SHIELD
 		};
 

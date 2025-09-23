@@ -394,6 +394,26 @@ namespace BoundEffectManager {
 		return costliestBindings.empty();
 	}
 
+	void BoundEffectManager::GainExperience() {
+		if (!player) {
+			return;
+		}
+
+		for (const auto& binding : costliestBindings) {
+			const auto* effect = binding.first;
+			const auto* spell = effect ? effect->spell : nullptr;
+			if (spell) {
+				auto skillUsage = RE::MagicItem::SkillUsageData();
+				if (!spell->GetSkillUsageData(skillUsage)) {
+					logger::critical("Failed to get skill usage data."sv);
+					continue;
+				}
+				logger::critical("Gained {} experience thanks to {}", skillUsage.magnitude, spell->GetName());
+				player->AddSkillExperience(skillUsage.skill, skillUsage.magnitude);
+			}
+		}
+	}
+
 	bool BoundEffectManager::HasEnoughOfAttributeToBind(RE::ActorValue a_av, float a_demand) {
 		float theoreticalMax = player->GetBaseActorValue(a_av) +
 			player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, a_av);
