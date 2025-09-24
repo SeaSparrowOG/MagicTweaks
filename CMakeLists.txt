@@ -10,7 +10,7 @@ option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). 
 # -------- Project ----------
 project(
 	MagicTweaks
-	VERSION 2.2.0
+	VERSION 2.2.2
 	LANGUAGES CXX
 )
 

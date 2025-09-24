@@ -339,7 +339,7 @@ namespace BoundEffectManager {
 	}
 
 	void BoundEffectManager::UpdateTimePassed(float a_delta) {
-		if (!Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS_UI).value_or(false)) {
+		if (!Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS).value_or(false)) {
 			return;
 		}
 
@@ -349,12 +349,28 @@ namespace BoundEffectManager {
 				timeElapsed = 0.0f;
 				return;
 			}
+
 			queued = true;
 			auto* taskInterface = SKSE::GetTaskInterface();
 			if (taskInterface) {
 				taskInterface->AddTask([self = this]() {
-					self->UpdateUI();
-					});
+					if (Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS_UI).value_or(false)) {
+						self->UpdateUI();
+					}
+
+					auto& costliestEffects = self->costliestBindings;
+					for (auto& [effect, binding] : costliestEffects) {
+						effect->EvaluateConditions(0.0f, true);
+					}
+
+					auto& miscBindings = self->boundEffects;
+					for (auto* effect : miscBindings) {
+						effect->EvaluateConditions(0.0f, true);
+					}
+
+					self->queued = false;
+					self->timeElapsed = 0.0f;
+				});
 			}
 		}
 	}
@@ -405,10 +421,8 @@ namespace BoundEffectManager {
 			if (spell) {
 				auto skillUsage = RE::MagicItem::SkillUsageData();
 				if (!spell->GetSkillUsageData(skillUsage)) {
-					logger::critical("Failed to get skill usage data."sv);
 					continue;
 				}
-				logger::critical("Gained {} experience thanks to {}", skillUsage.magnitude, spell->GetName());
 				player->AddSkillExperience(skillUsage.skill, skillUsage.magnitude);
 			}
 		}
@@ -449,17 +463,17 @@ namespace BoundEffectManager {
 		float baseHealth = player->GetBaseActorValue(RE::ActorValue::kHealth);
 		float currentHealth = baseHealth +
 			player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kHealth);
-		float healthRatio = std::clamp(currentHealth / baseHealth * 100.0f, 0.0f, 100.0f);
+		float healthRatio = std::clamp(std::ceil(currentHealth / baseHealth) * 100.0f, 0.0f, 100.0f);
 
 		float baseStamina = player->GetBaseActorValue(RE::ActorValue::kStamina);
 		float currentStamina = baseStamina +
 			player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kStamina);
-		float staminaRatio = std::clamp(currentStamina / baseStamina * 100.0f, 0.0f, 100.0f);
+		float staminaRatio = std::clamp(std::ceil(currentStamina / baseStamina) * 100.0f, 0.0f, 100.0f);
 
 		float baseMagicka = player->GetBaseActorValue(RE::ActorValue::kMagicka);
 		float currentMagicka = baseMagicka +
 			player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kMagicka);
-		float magickaRatio = std::clamp(currentMagicka / baseMagicka * 100.0f, 0.0f, 100.0f);
+		float magickaRatio = std::clamp(std::ceil(currentMagicka / baseMagicka) * 100.0f, 0.0f, 100.0f);
 
 		auto* healthGlobal = RE::TESForm::LookupByEditorID<RE::TESGlobal>("Survival_ColdAttributePenaltyPercent"sv);
 		auto* staminaGlobal = RE::TESForm::LookupByEditorID<RE::TESGlobal>("Survival_HungerAttributePenaltyPercent"sv);
@@ -474,7 +488,5 @@ namespace BoundEffectManager {
 		if (magickaGlobal) {
 			magickaGlobal->value = 100.0f - magickaRatio;
 		}
-		timeElapsed = 0.0f;
-		queued = false;
 	}
 }
