@@ -3,31 +3,11 @@
 namespace Serialization
 {
 	constexpr std::uint32_t Version = 1;
-	constexpr std::uint32_t ID = 'STPR';
-
-	constexpr std::uint32_t RecordType = 'RCTP';
+	constexpr std::uint32_t ID = 'MGTW';
 
 	void SaveCallback(SKSE::SerializationInterface* a_intfc);
 	void LoadCallback(SKSE::SerializationInterface* a_intfc);
 	void RevertCallback(SKSE::SerializationInterface* a_intfc);
-	
-	/// <summary>
-	/// Debug tool. When encountering unexpected RecordTypes, converts them to a readable string (HDEC, STEN, etc).
-	/// </summary>
-	/// <param name="a_typeCode">The unexpected record type.</param>
-	/// <returns>The unexpected record type as a string.</returns>
-	inline std::string DecodeTypeCode(std::uint32_t a_typeCode)
-	{
-		constexpr std::size_t SIZE = sizeof(std::uint32_t);
-
-		std::string sig;
-		sig.resize(SIZE);
-		char* iter = reinterpret_cast<char*>(&a_typeCode);
-		for (std::size_t i = 0, j = SIZE - 2; i < SIZE - 1; ++i, --j) {
-			sig[j] = iter[i];
-		}
-		return sig;
-	}
 
 	/// <summary>
 	/// Helper function. Encodes a string into the interface.

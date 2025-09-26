@@ -39,6 +39,24 @@ namespace Serialization
 
 		private:
 			std::unordered_map<uint32_t, Serializable*> recordObjectMap{};
+
+			/// <summary>
+			/// Debug tool. When encountering unexpected RecordTypes, converts them to a readable string (HDEC, STEN, etc).
+			/// </summary>
+			/// <param name="a_typeCode">The unexpected record type.</param>
+			/// <returns>The unexpected record type as a string.</returns>
+			inline std::string DecodeTypeCode(std::uint32_t a_typeCode)
+			{
+				constexpr std::size_t SIZE = sizeof(std::uint32_t);
+
+				std::string sig;
+				sig.resize(SIZE);
+				char* iter = reinterpret_cast<char*>(&a_typeCode);
+				for (std::size_t i = 0, j = SIZE - 2; i < SIZE - 1; ++i, --j) {
+					sig[j] = iter[i];
+				}
+				return sig;
+			}
 		};
 	}
 }

@@ -54,6 +54,7 @@ namespace BoundEffectManager
 			}
 		};
 
+		bool loading{ false };
 		bool enabled{ false };
 		bool queued{ false };
 		float timeElapsed{ 0.0f };

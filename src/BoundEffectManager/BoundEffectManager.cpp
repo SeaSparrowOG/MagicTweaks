@@ -67,38 +67,48 @@ namespace BoundEffectManager
 	}
 
 	bool BoundEffectManager::Save(SKSE::SerializationInterface* a_intfc) {
+		loading = true;
 		logger::info("  >Saving Bound Effect Manager state..."sv);
 		if (!a_intfc->OpenRecord(RecordType, Serialization::Version)) {
 			logger::error("    >Error serializing Bound Effects!"sv);
+			loading = false;
 			return false;
 		}
 		if (!a_intfc->WriteRecordData(totalHealthBound)) {
 			logger::error("    >Error writing Bound Health."sv);
+			loading = false;
 			return false;
 		}
 		if (!a_intfc->WriteRecordData(totalStaminaBound)) {
 			logger::error("    >Error writing Bound Stamina."sv);
+			loading = false;
 			return false;
 		}
 		if (!a_intfc->WriteRecordData(totalMagickaBound)) {
 			logger::error("    >Error writing Bound Magicka."sv);
+			loading = false;
 			return false;
 		}
 		logger::info("    >Success."sv);
+		loading = false;
 		return true;
 	}
 
 	bool BoundEffectManager::Load(SKSE::SerializationInterface* a_intfc) {
+		loading = true;
 		if (!a_intfc->ReadRecordData(totalHealthBound)) {
 			logger::critical("    >Failed to deserialize Bound Health."sv);
+			loading = false;
 			return false;
 		}
 		if (!a_intfc->ReadRecordData(totalStaminaBound)) {
 			logger::critical("    >Failed to deserialize Bound Stamina."sv);
+			loading = false;
 			return false;
 		}
 		if (!a_intfc->ReadRecordData(totalMagickaBound)) {
 			logger::critical("    >Failed to deserialize Bound Magicka."sv);
+			loading = false;
 			return false;
 		}
 		Revert(a_intfc);
@@ -106,6 +116,7 @@ namespace BoundEffectManager
 		for (auto* effect : *activeEffects) {
 			ProcessEffectAdded(effect);
 		}
+		loading = false;
 		return true;
 	}
 
@@ -117,6 +128,9 @@ namespace BoundEffectManager
 		totalHealthBound = 0.0f;
 		totalStaminaBound = 0.0f;
 		totalMagickaBound = 0.0f;
+
+		boundEffects.clear();
+		costliestBindings.clear();
 	}
 }
 
@@ -339,7 +353,7 @@ namespace BoundEffectManager {
 	}
 
 	void BoundEffectManager::UpdateTimePassed(float a_delta) {
-		if (!Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS).value_or(false)) {
+		if (loading || !Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS).value_or(false)) {
 			return;
 		}
 
@@ -354,6 +368,11 @@ namespace BoundEffectManager {
 			auto* taskInterface = SKSE::GetTaskInterface();
 			if (taskInterface) {
 				taskInterface->AddTask([self = this]() {
+					if (self->loading) {
+						self->queued = false;
+						self->timeElapsed = 0.0f;
+						return;
+					}
 					if (Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS_UI).value_or(false)) {
 						self->UpdateUI();
 					}

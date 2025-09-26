@@ -24,7 +24,7 @@ namespace Serialization::SerializationManager
 				}
 			}
 			else {
-				return false;
+				logger::warn("Caught bad record of type {}", DecodeTypeCode(type));
 			}
 		}
 		return true;
