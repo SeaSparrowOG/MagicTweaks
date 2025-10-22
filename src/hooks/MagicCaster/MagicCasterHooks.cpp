@@ -28,7 +28,7 @@ namespace Hooks::MagicCaster
 			canCast = boundEffectManager->CanCastSpell(a_spell, a_dualCast);
 			if (!canCast) {
 				*a_reason = RE::MagicSystem::CannotCastReason::kOK;
-				RE::DebugNotification("You cannot Bind this spell.");
+				RE::SendHUDMessage::ShowHUDMessage("You cannot Bind this spell.");
 			}
 		}
 		return canCast;
