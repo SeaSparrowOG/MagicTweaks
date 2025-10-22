@@ -155,9 +155,9 @@ namespace Hooks {
 					add(rsp, 0x20);
 
 					// Restore vanilla behavior
-					test(al, al);                        // Important, al is modified by ShouldModifyEffect. This is stored in
-														 // bVar3, and if bVar3 DOESN'T uVar5 [*(param_1 + 0x7c) >> 0xc], RDI's
-														 // effect is modified. So, changing al is intentional. Remove it for fun!
+					test(al, al);   // Important, al is modified by ShouldModifyEffect. This is stored in
+									// bVar3, and if bVar3 DOESN'T uVar5 [*(param_1 + 0x7c) >> 0xc], RDI's
+									// effect is modified. So, changing al is intentional. Remove it for fun!
 					jz("do_clear");
 
 					or_(dword[rdi + 0x7C], 0x1000);      // Sets the kDualFlag in the effect in RDI
@@ -183,8 +183,8 @@ namespace Hooks {
 
 		inline bool CloakArchetypeFix::ShouldClearDualFlag(RE::ActiveEffect* a_effect)
 		{
-			bool noDualCast = a_effect->castingSource == RE::MagicSystem::CastingSource::kInstant;
-			bool isDualCasting = a_effect->GetCasterActor() ? a_effect->GetCasterActor()->IsDualCasting() : false;
+			const bool noDualCast = a_effect->castingSource == RE::MagicSystem::CastingSource::kInstant;
+			const bool isDualCasting = a_effect->GetCasterActor() ? a_effect->GetCasterActor()->IsDualCasting() : false;
 			return isDualCasting && !noDualCast;
 		}
 	}
