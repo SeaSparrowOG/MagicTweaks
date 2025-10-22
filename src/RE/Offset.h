@@ -10,4 +10,8 @@ namespace RE::Offset
 	{
 		constexpr auto GetItemCount = REL::ID(21435);
 	}
+	namespace ValueModifierEffect
+	{
+		constexpr auto ApplyEffect = REL::ID(34058);
+	}
 }

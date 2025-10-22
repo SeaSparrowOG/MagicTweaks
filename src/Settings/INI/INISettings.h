@@ -49,6 +49,7 @@ namespace Settings
 		inline static constexpr const char* FIX_POISON = "Fixes|bNeverAbsorbPoison";
 		inline static constexpr const char* FIX_SELF = "Fixes|bNeverAbsorbSelfTargettingEffects";
 		inline static constexpr const char* FIX_BENEFICIAL = "Fixes|bNeverAbsorbBeneficialEffects";
+		inline static constexpr const char* FIX_CLOAKS = "Fixes|bFixCloakArchetype";
 
 		inline static constexpr const char* TWEAK_DIALOGUE = "Tweaks|bExtendEffectsInDialogue";
 		inline static constexpr const char* TWEAK_DIALOGUE_WEAPONS = "Tweaks|bTweakBoundWeapons";
@@ -74,11 +75,12 @@ namespace Settings
 		inline static constexpr const char* BOUND_SPELLS_EXP = "Bound Spells|bEarnExperienceInCombat";
 		inline static constexpr const char* MAGICKA_SHIELD = "Magicka Shield|bInstall";
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 23;
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 24;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			FIX_POISON,
 			FIX_SELF,
 			FIX_BENEFICIAL,
+			FIX_CLOAKS,
 			TWEAK_DIALOGUE,
 			TWEAK_DIALOGUE_WEAPONS,
 			TWEAK_DIALOGUE_CLOAKS,
