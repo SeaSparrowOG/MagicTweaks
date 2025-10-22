@@ -150,7 +150,7 @@ namespace Hooks {
 				Patch(std::uintptr_t contAddr) {
 					sub(rsp, 0x20);
 					mov(rcx, rdi); // In RDI lives a ValueModifierEffect - might be an ActiveEffect pointer though, test.
-					mov(rax, reinterpret_cast<std::uintptr_t>(&ShouldModifyEffect));
+					mov(rax, reinterpret_cast<std::uintptr_t>(&ShouldClearDualFlag));
 					call(rax);
 					add(rsp, 0x20);
 
@@ -181,9 +181,11 @@ namespace Hooks {
 			return true;
 		}
 
-		inline bool CloakArchetypeFix::ShouldModifyEffect(RE::ValueModifierEffect* a_effect)
+		inline bool CloakArchetypeFix::ShouldClearDualFlag(RE::ActiveEffect* a_effect)
 		{
-			return a_effect->castingSource == RE::MagicSystem::CastingSource::kInstant;
+			bool noDualCast = a_effect->castingSource == RE::MagicSystem::CastingSource::kInstant;
+			bool isDualCasting = a_effect->GetCasterActor() ? a_effect->GetCasterActor()->IsDualCasting() : false;
+			return isDualCasting && !noDualCast;
 		}
 	}
 }

@@ -31,7 +31,7 @@ namespace Hooks
 		struct CloakArchetypeFix
 		{
 			inline static bool InstallCloakFix();
-			inline static bool ShouldModifyEffect(RE::ValueModifierEffect* a_effect);
+			inline static bool ShouldClearDualFlag(RE::ActiveEffect* a_effect);
 		};
 	}
 }
