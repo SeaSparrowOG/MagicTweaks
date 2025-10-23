@@ -108,13 +108,13 @@ namespace Hooks {
 			return true;
 		}
 
-		bool Player::PlayerThunk(RE::MagicTarget* a_this, 
+		bool Player::PlayerThunk(RE::MagicTarget* a_this,
 			RE::Actor* a_actor,
-				RE::MagicItem* a_magicItem,
-				const RE::Effect* a_effect)
-				{
-					return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) &&
-						_func(a_this, a_actor, a_magicItem, a_effect);
+			RE::MagicItem* a_magicItem,
+			const RE::Effect* a_effect)
+		{
+			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) &&
+				_func(a_this, a_actor, a_magicItem, a_effect);
 		}
 
 		bool Character::CharacterThunk(RE::MagicTarget* a_this,
@@ -134,7 +134,7 @@ namespace Hooks {
 				return true;
 			}
 
-			REL::Relocation<std::uintptr_t> target{ REL::ID(51898), 0x72 };
+			REL::Relocation<std::uintptr_t> target{ RE::Offset::AnonymousNamespace::ResetElapsedTimeMagicEffects, 0x72 };
 			if (!REL::make_pattern<"E8">().match(target.address())) {
 				logger::critical("    >Failed to validate the hook pattern."sv);
 				return false;
@@ -167,97 +167,61 @@ namespace Hooks {
 			a_effect->flags.reset(RE::ActiveEffect::Flag::kDual);
 			a_effect->elapsedSeconds = 0.0f;
 
+			// Attempt to re-apply magnitude from perks
 			auto* caster = a_effect->caster.get().get();
-			if (!caster) {
-				return;
-			}
 			auto* target = a_effect->target;
-			if (!target) {
+			auto* targetAsActor = target ? target->GetTargetAsActor() : nullptr;
+			auto* spell = a_effect->spell ? a_effect->spell->As<RE::SpellItem>() : nullptr;
+			if (!caster || !targetAsActor || !spell || spell->effects.empty()) {
 				return;
 			}
 
-			auto visitor = CloakEffectMagnitudeVisitor(a_effect);
-			if (visitor.CanRun()) {
-				caster->ForEachPerk(visitor);
-				visitor.Finalize();
-			}
-		}
+			float magnitude = 0.0f;
+			bool foundMagnitude = false;
+			auto begin = spell->effects.begin();
+			auto end = spell->effects.end();
+			for (auto it = begin; !foundMagnitude && it != end; ++it) {
+				auto* effectItem = *it;
+				if (!effectItem) {
+					continue;
+				}
+				if (base != effectItem->baseEffect) {
+					continue;
+				}
 
-		RE::BSContainer::ForEachResult CloakArchetypeFix::CloakEffectMagnitudeVisitor::Visit(RE::BGSPerkEntry* a_perkEntry)
-		{
-			using Result = RE::BSContainer::ForEachResult;
-			if (!a_perkEntry ||
-				a_perkEntry->GetType() != RE::PERK_ENTRY_TYPE::kEntryPoint ||
-				a_perkEntry->GetFunction() != RE::BGSPerkEntry::EntryPoint::kModSpellMagnitude)
+				foundMagnitude = true;
+				magnitude = effectItem->GetMagnitude();
+			}
+			if (!foundMagnitude) {
+				return;
+			}
+
+			bool reverse = false;
+			RE::BGSEntryPoint::HandleEntryPoint(
+				RE::BGSEntryPointPerkEntry::EntryPoint::kModSpellMagnitude,
+				caster,
+				spell,
+				targetAsActor,
+				&magnitude);
+
+			if (base) {
+				switch (base->GetArchetype()) {
+				case RE::EffectSetting::Archetype::kValueModifier:
+				case RE::EffectSetting::Archetype::kAbsorb:
+				case RE::EffectSetting::Archetype::kDualValueModifier:
+				case RE::EffectSetting::Archetype::kAccumulateMagnitude:
+				case RE::EffectSetting::Archetype::kPeakValueModifier:
+					reverse = true;
+					break;
+				}
+			}
+
+			if (reverse &&
+				base->data.flags.any(RE::EffectSetting::EffectSettingData::Flag::kDetrimental))
 			{
-				return Result::kContinue;
+				magnitude = -magnitude;
 			}
-
-			auto* function = a_perkEntry->GetFunctionData();
-			if (!function) {
-				return Result::kContinue;
-			}
-
-			// Mod Spell Magnitude has 3 filters - target, caster, spell
-			if (!a_perkEntry->CheckConditionFilters(3u, a_perkEntry->GetFunctionData())) {
-				return Result::kContinue;
-			}
-
-			auto* asOneArgumentFunc = static_cast<RE::BGSEntryPointFunctionDataOneValue*>(function);
-			auto* asTwoArgumetFunc = static_cast<RE::BGSEntryPointFunctionDataTwoValue*>(function);
-
-			switch (a_perkEntry->GetFunction()) {
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kSetValue:
-				result = asOneArgumentFunc->data;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kAddValue:
-				result += asOneArgumentFunc->data;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kMultiplyValue:
-				result *= asOneArgumentFunc->data;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kAddActorValueMult:
-				result += asTwoArgumetFunc->av * asTwoArgumetFunc->value;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kAbsoluteValue:
-				result = abs(result);
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kNegativeAbsoluteValue:
-				result = abs(result) * -1.0f;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kSetToActorValueMult:
-				result = abs(result) * -1.0f;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kMultiplyActorValueMult:
-				result *= asTwoArgumetFunc->av * asTwoArgumetFunc->value;
-				break;
-			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kMultiplyOnePlusActorValueMult:
-				result *= 1.0f + asTwoArgumetFunc->av * asTwoArgumetFunc->value;
-				break;
-			}
-
-			return Result::kContinue;
+			a_effect->magnitude = magnitude;
 		}
-
-		bool CloakArchetypeFix::CloakEffectMagnitudeVisitor::CanRun()
-		{
-			if (!effect || !spell || !caster || !targetAsActor) {
-				return false;
-			}
-			
-			const auto* base = effect->GetBaseObject();
-			if (!base || 
-				base->data.flags.any(RE::EffectSetting::EffectSettingData::Flag::kNoMagnitude)) 
-			{
-				return false;
-			}
-
-			return true;
-		}
-
-		void CloakArchetypeFix::CloakEffectMagnitudeVisitor::Finalize()
-		{
-			effect->magnitude = result;
-		}
-}
+	}
 }

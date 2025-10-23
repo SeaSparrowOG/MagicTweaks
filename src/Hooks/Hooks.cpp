@@ -34,7 +34,7 @@ namespace Hooks {
 		}
 		bool installCloakFix = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
 		if (installCloakFix) {
-			allocSize += 83; // 69 (size of patch) + 14
+			allocSize += 14u; // 14
 		}
 
 		if (allocSize > 0u) {
