@@ -1,6 +1,7 @@
 #include "Fixes.h"
 
 #include "RE/Offset.h"
+#include "RE/BGSEntryPointFunctionDataTwoValue.h"
 #include "Settings/INI/INISettings.h"
 
 #include <xbyak.h>
@@ -107,12 +108,12 @@ namespace Hooks {
 			return true;
 		}
 
-		bool Player::PlayerThunk(RE::MagicTarget* a_this, 
-			RE::Actor* a_actor, 
-			RE::MagicItem* a_magicItem, 
+		bool Player::PlayerThunk(RE::MagicTarget* a_this,
+			RE::Actor* a_actor,
+			RE::MagicItem* a_magicItem,
 			const RE::Effect* a_effect)
 		{
-			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) && 
+			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) &&
 				_func(a_this, a_actor, a_magicItem, a_effect);
 		}
 
@@ -121,72 +122,106 @@ namespace Hooks {
 			RE::MagicItem* a_magicItem,
 			const RE::Effect* a_effect)
 		{
-			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) && 
+			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) &&
 				_func(a_this, a_actor, a_magicItem, a_effect);
 		}
 
 		bool CloakArchetypeFix::InstallCloakFix() {
-			static constexpr std::size_t hookSize = 20; // 7 (AND_) + 7 (OR_) + 2 (TEST) + 2 (JZ) + 2 (JMP)
-
-			bool shouldInstall = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
+			logger::info("    >Installing the Cloak Archetype Fix..."sv);
+			const bool shouldInstall = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
 			if (!shouldInstall) {
-				logger::info("    >User chose to not install the Cloak Archetype Fix."sv);
+				logger::info("      User chose not to install the fix."sv);
 				return true;
 			}
 
-			logger::info("    >Installing the Cloak Archetype Fix..."sv);
-			REL::Relocation<std::uintptr_t> target{ RE::Offset::ValueModifierEffect::ApplyEffect, 0x85 };
-			const std::uintptr_t hookAddr = target.address();
-			const std::uintptr_t continuation = hookAddr + hookSize;
-
-			if (!REL::make_pattern<"84 C0 74 09 81 4F 7C 00 10 00 00 EB 07 81 67 7C FF EF FF FF">().match(target.address())) {
-				logger::critical("      Failed to validate the hook pattern."sv);
+			REL::Relocation<std::uintptr_t> target{ RE::Offset::AnonymousNamespace::ResetElapsedTimeMagicEffects, 0x72 };
+			if (!REL::make_pattern<"E8">().match(target.address())) {
+				logger::critical("    >Failed to validate the hook pattern."sv);
 				return false;
 			}
-
-			struct Patch : Xbyak::CodeGenerator {
-				Patch(std::uintptr_t contAddr) {
-					sub(rsp, 0x20);
-					mov(rcx, rdi);
-					mov(rax, reinterpret_cast<std::uintptr_t>(&AllowDualCastModification));
-					call(rax);
-					add(rsp, 0x20);
-
-					test(al, al);
-					jz("clear_flag");
-
-					or_(dword[rdi + 0x7C], 0x1000);
-					jmp(ptr[rip]);
-					dq(contAddr);
-
-					L("clear_flag");
-					and_(dword[rdi + 0x7C], 0xFFFFEFFF);
-					jmp(ptr[rip]);
-					dq(contAddr);
-				}
-			};
-
-
-			Patch patch{ continuation };
-			patch.ready();
-
 			auto& trampoline = SKSE::GetTrampoline();
-
-			REL::safe_fill(hookAddr, REL::NOP, hookSize);
-			trampoline.write_branch<5>(hookAddr, trampoline.allocate(patch));
+			_func = trampoline.write_call<5>(target.address(), &ResetCloakEffect);
 			return true;
 		}
 
-		bool CloakArchetypeFix::AllowDualCastModification(RE::ActiveEffect* a_effect)
+		void CloakArchetypeFix::ResetCloakEffect(RE::ActiveEffect* a_effect)
 		{
-			bool instant = a_effect->castingSource == RE::MagicSystem::CastingSource::kInstant;
-			if (instant) {
-				return false;
+			// Effect might be nullptr, but isn't checked in vanilla
+			if (!a_effect ||
+				a_effect->castingSource != RE::MagicSystem::CastingSource::kInstant ||
+				!a_effect->GetBaseObject())
+			{
+				_func(a_effect);
+				return;
 			}
-			if (a_effect->caster.get() && a_effect->caster.get()->IsDualCasting()) {
-				return true;
+
+			const auto* base = a_effect->GetBaseObject();
+			if (!base ||
+				base->data.castingType != RE::MagicSystem::CastingType::kConcentration ||
+				base->data.flags.any(RE::EffectSetting::EffectSettingData::Flag::kRecover))
+			{
+				_func(a_effect);
+				return;
 			}
-			return false;
+
+			a_effect->flags.reset(RE::ActiveEffect::Flag::kDual);
+			a_effect->elapsedSeconds = 0.0f;
+
+			// Attempt to re-apply magnitude from perks
+			auto* caster = a_effect->caster.get().get();
+			auto* target = a_effect->target;
+			auto* targetAsActor = target ? target->GetTargetAsActor() : nullptr;
+			auto* spell = a_effect->spell ? a_effect->spell->As<RE::SpellItem>() : nullptr;
+			if (!caster || !targetAsActor || !spell || spell->effects.empty()) {
+				return;
+			}
+
+			float magnitude = 0.0f;
+			bool foundMagnitude = false;
+			auto begin = spell->effects.begin();
+			auto end = spell->effects.end();
+			for (auto it = begin; !foundMagnitude && it != end; ++it) {
+				auto* effectItem = *it;
+				if (!effectItem) {
+					continue;
+				}
+				if (base != effectItem->baseEffect) {
+					continue;
+				}
+
+				foundMagnitude = true;
+				magnitude = effectItem->GetMagnitude();
+			}
+			if (!foundMagnitude) {
+				return;
+			}
+
+			bool reverse = false;
+			RE::BGSEntryPoint::HandleEntryPoint(
+				RE::BGSEntryPointPerkEntry::EntryPoint::kModSpellMagnitude,
+				caster,
+				spell,
+				targetAsActor,
+				&magnitude);
+
+			if (base) {
+				switch (base->GetArchetype()) {
+				case RE::EffectSetting::Archetype::kValueModifier:
+				case RE::EffectSetting::Archetype::kAbsorb:
+				case RE::EffectSetting::Archetype::kDualValueModifier:
+				case RE::EffectSetting::Archetype::kAccumulateMagnitude:
+				case RE::EffectSetting::Archetype::kPeakValueModifier:
+					reverse = true;
+					break;
+				}
+			}
+
+			if (reverse &&
+				base->data.flags.any(RE::EffectSetting::EffectSettingData::Flag::kDetrimental))
+			{
+				magnitude = -magnitude;
+			}
+			a_effect->magnitude = magnitude;
 		}
 	}
 }

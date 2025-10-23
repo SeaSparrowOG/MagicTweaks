@@ -31,7 +31,9 @@ namespace Hooks
 		struct CloakArchetypeFix
 		{
 			static bool InstallCloakFix();
-			static bool AllowDualCastModification(RE::ActiveEffect* a_effect);
+			static void ResetCloakEffect(RE::ActiveEffect* a_effect);
+
+			inline static REL::Relocation<decltype(&ResetCloakEffect)> _func;
 		};
 	}
 }
