@@ -135,7 +135,7 @@ namespace Hooks {
 			}
 
 			logger::info("    >Installing the Cloak Archetype Fix..."sv);
-			REL::Relocation<std::uintptr_t> target{ RE::Offset::ValueModifierEffect::ApplyEffect, 0x85 };
+			REL::Relocation<std::uintptr_t> target{ RE::Offset::ActiveEffect::Restart, 0x85 };
 			const std::uintptr_t hookAddr = target.address();
 			const std::uintptr_t continuation = hookAddr + hookSize;
 
