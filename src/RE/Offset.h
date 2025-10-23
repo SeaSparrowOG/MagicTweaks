@@ -2,13 +2,13 @@
 
 namespace RE::Offset
 {
-	namespace ActiveEffect
-	{
-		constexpr auto Restart = REL::ID(34058);
-	}
 	namespace Actor
 	{
 		constexpr auto DoDamage = REL::ID(37335);
+	}
+	namespace AnonymousNamespace
+	{
+		constexpr auto ResetElapsedTimeMagicEffects = REL::ID(34581);
 	}
 	namespace TESObjectREFR
 	{

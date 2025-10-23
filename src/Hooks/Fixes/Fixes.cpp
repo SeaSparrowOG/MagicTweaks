@@ -1,6 +1,7 @@
 #include "Fixes.h"
 
 #include "RE/Offset.h"
+#include "RE/BGSEntryPointFunctionDataTwoValue.h"
 #include "Settings/INI/INISettings.h"
 
 #include <xbyak.h>
@@ -108,12 +109,12 @@ namespace Hooks {
 		}
 
 		bool Player::PlayerThunk(RE::MagicTarget* a_this, 
-			RE::Actor* a_actor, 
-			RE::MagicItem* a_magicItem, 
-			const RE::Effect* a_effect)
-		{
-			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) && 
-				_func(a_this, a_actor, a_magicItem, a_effect);
+			RE::Actor* a_actor,
+				RE::MagicItem* a_magicItem,
+				const RE::Effect* a_effect)
+				{
+					return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) &&
+						_func(a_this, a_actor, a_magicItem, a_effect);
 		}
 
 		bool Character::CharacterThunk(RE::MagicTarget* a_this,
@@ -121,72 +122,142 @@ namespace Hooks {
 			RE::MagicItem* a_magicItem,
 			const RE::Effect* a_effect)
 		{
-			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) && 
+			return AllowAbsorb(a_this, a_actor, a_magicItem, a_effect) &&
 				_func(a_this, a_actor, a_magicItem, a_effect);
 		}
 
 		bool CloakArchetypeFix::InstallCloakFix() {
-			static constexpr std::size_t hookSize = 20; // 7 (AND_) + 7 (OR_) + 2 (TEST) + 2 (JZ) + 2 (JMP)
-
-			bool shouldInstall = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
+			logger::info("    >Installing the Cloak Archetype Fix..."sv);
+			const bool shouldInstall = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
 			if (!shouldInstall) {
-				logger::info("    >User chose to not install the Cloak Archetype Fix."sv);
+				logger::info("      User chose not to install the fix."sv);
 				return true;
 			}
 
-			logger::info("    >Installing the Cloak Archetype Fix..."sv);
-			REL::Relocation<std::uintptr_t> target{ RE::Offset::ActiveEffect::Restart, 0x85 };
-			const std::uintptr_t hookAddr = target.address();
-			const std::uintptr_t continuation = hookAddr + hookSize;
-
-			if (!REL::make_pattern<"84 C0 74 09 81 4F 7C 00 10 00 00 EB 07 81 67 7C FF EF FF FF">().match(target.address())) {
-				logger::critical("      Failed to validate the hook pattern."sv);
+			REL::Relocation<std::uintptr_t> target{ REL::ID(51898), 0x72 };
+			if (!REL::make_pattern<"E8">().match(target.address())) {
+				logger::critical("    >Failed to validate the hook pattern."sv);
 				return false;
 			}
-
-			struct Patch : Xbyak::CodeGenerator {
-				Patch(std::uintptr_t contAddr) {
-					sub(rsp, 0x20);
-					mov(rcx, rdi);
-					mov(rax, reinterpret_cast<std::uintptr_t>(&AllowDualCastModification));
-					call(rax);
-					add(rsp, 0x20);
-
-					test(al, al);
-					jz("clear_flag");
-
-					or_(dword[rdi + 0x7C], 0x1000);
-					jmp(ptr[rip]);
-					dq(contAddr);
-
-					L("clear_flag");
-					and_(dword[rdi + 0x7C], 0xFFFFEFFF);
-					jmp(ptr[rip]);
-					dq(contAddr);
-				}
-			};
-
-
-			Patch patch{ continuation };
-			patch.ready();
-
 			auto& trampoline = SKSE::GetTrampoline();
-
-			REL::safe_fill(hookAddr, REL::NOP, hookSize);
-			trampoline.write_branch<5>(hookAddr, trampoline.allocate(patch));
+			_func = trampoline.write_call<5>(target.address(), &ResetCloakEffect);
 			return true;
 		}
 
-		bool CloakArchetypeFix::AllowDualCastModification(RE::ActiveEffect* a_effect)
+		void CloakArchetypeFix::ResetCloakEffect(RE::ActiveEffect* a_effect)
 		{
-			bool instant = a_effect->castingSource == RE::MagicSystem::CastingSource::kInstant;
-			if (instant) {
+			// Effect might be nullptr, but isn't checked in vanilla
+			if (!a_effect ||
+				a_effect->castingSource != RE::MagicSystem::CastingSource::kInstant ||
+				!a_effect->GetBaseObject())
+			{
+				_func(a_effect);
+				return;
+			}
+
+			const auto* base = a_effect->GetBaseObject();
+			if (!base ||
+				base->data.castingType != RE::MagicSystem::CastingType::kConcentration ||
+				base->data.flags.any(RE::EffectSetting::EffectSettingData::Flag::kRecover))
+			{
+				_func(a_effect);
+				return;
+			}
+
+			a_effect->flags.reset(RE::ActiveEffect::Flag::kDual);
+			a_effect->elapsedSeconds = 0.0f;
+
+			auto* caster = a_effect->caster.get().get();
+			if (!caster) {
+				return;
+			}
+			auto* target = a_effect->target;
+			if (!target) {
+				return;
+			}
+
+			auto visitor = CloakEffectMagnitudeVisitor(a_effect);
+			if (visitor.CanRun()) {
+				caster->ForEachPerk(visitor);
+				visitor.Finalize();
+			}
+		}
+
+		RE::BSContainer::ForEachResult CloakArchetypeFix::CloakEffectMagnitudeVisitor::Visit(RE::BGSPerkEntry* a_perkEntry)
+		{
+			using Result = RE::BSContainer::ForEachResult;
+			if (!a_perkEntry ||
+				a_perkEntry->GetType() != RE::PERK_ENTRY_TYPE::kEntryPoint ||
+				a_perkEntry->GetFunction() != RE::BGSPerkEntry::EntryPoint::kModSpellMagnitude)
+			{
+				return Result::kContinue;
+			}
+
+			auto* function = a_perkEntry->GetFunctionData();
+			if (!function) {
+				return Result::kContinue;
+			}
+
+			// Mod Spell Magnitude has 3 filters - target, caster, spell
+			if (!a_perkEntry->CheckConditionFilters(3u, a_perkEntry->GetFunctionData())) {
+				return Result::kContinue;
+			}
+
+			auto* asOneArgumentFunc = static_cast<RE::BGSEntryPointFunctionDataOneValue*>(function);
+			auto* asTwoArgumetFunc = static_cast<RE::BGSEntryPointFunctionDataTwoValue*>(function);
+
+			switch (a_perkEntry->GetFunction()) {
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kSetValue:
+				result = asOneArgumentFunc->data;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kAddValue:
+				result += asOneArgumentFunc->data;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kMultiplyValue:
+				result *= asOneArgumentFunc->data;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kAddActorValueMult:
+				result += asTwoArgumetFunc->av * asTwoArgumetFunc->value;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kAbsoluteValue:
+				result = abs(result);
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kNegativeAbsoluteValue:
+				result = abs(result) * -1.0f;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kSetToActorValueMult:
+				result = abs(result) * -1.0f;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kMultiplyActorValueMult:
+				result *= asTwoArgumetFunc->av * asTwoArgumetFunc->value;
+				break;
+			case RE::BGSEntryPointFunction::ENTRY_POINT_FUNCTION::kMultiplyOnePlusActorValueMult:
+				result *= 1.0f + asTwoArgumetFunc->av * asTwoArgumetFunc->value;
+				break;
+			}
+
+			return Result::kContinue;
+		}
+
+		bool CloakArchetypeFix::CloakEffectMagnitudeVisitor::CanRun()
+		{
+			if (!effect || !spell || !caster || !targetAsActor) {
 				return false;
 			}
-			if (a_effect->caster.get() && a_effect->caster.get()->IsDualCasting()) {
-				return true;
+			
+			const auto* base = effect->GetBaseObject();
+			if (!base || 
+				base->data.flags.any(RE::EffectSetting::EffectSettingData::Flag::kNoMagnitude)) 
+			{
+				return false;
 			}
-			return false;
+
+			return true;
 		}
-	}
+
+		void CloakArchetypeFix::CloakEffectMagnitudeVisitor::Finalize()
+		{
+			effect->magnitude = result;
+		}
+}
 }

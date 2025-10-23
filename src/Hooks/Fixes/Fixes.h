@@ -31,7 +31,58 @@ namespace Hooks
 		struct CloakArchetypeFix
 		{
 			static bool InstallCloakFix();
-			static bool AllowDualCastModification(RE::ActiveEffect* a_effect);
+			static void ResetCloakEffect(RE::ActiveEffect* a_effect);
+
+			inline static REL::Relocation<decltype(&ResetCloakEffect)> _func;
+
+			class CloakEffectMagnitudeVisitor : public RE::PerkEntryVisitor
+			{
+			public:
+				RE::BSContainer::ForEachResult Visit(RE::BGSPerkEntry* a_perkEntry);
+				bool                           CanRun();
+				void                           Finalize();
+
+				CloakEffectMagnitudeVisitor(RE::ActiveEffect* a_effect)
+				{
+					effect = a_effect;
+					spell = a_effect->spell ? a_effect->spell->As<RE::SpellItem>() : nullptr;
+					target = a_effect->target;
+					caster = a_effect->caster.get().get();
+					targetAsActor = target ? target->GetTargetAsActor() : nullptr;
+
+					bool foundMatch = false;
+					if (spell && !spell->effects.empty()) {
+						const auto* base = a_effect->GetBaseObject();
+						auto begin = spell->effects.begin();
+						auto end = spell->effects.end();
+
+						for (auto it = begin; !foundMatch && it != end; ++it) {
+							const auto* effectItem = *it;
+							const auto* spellEffectBase = effectItem ? effectItem->baseEffect : nullptr;
+							if (!spellEffectBase) {
+								continue;
+							}
+
+							foundMatch |= spellEffectBase == base;
+							if (foundMatch) {
+								result = effectItem->GetMagnitude();
+							}
+						}
+					}
+					if (!foundMatch) {
+						spell = nullptr;
+						effect = nullptr;
+						result = 0.0f;
+					}
+				}
+			private:
+				float             result{ 1.0f };
+				RE::Actor*        caster{ nullptr };
+				RE::Actor*        targetAsActor{ nullptr };
+				RE::SpellItem*    spell{ nullptr };
+				RE::MagicTarget*  target{ nullptr };
+				RE::ActiveEffect* effect{ nullptr };
+			};
 		};
 	}
 }
