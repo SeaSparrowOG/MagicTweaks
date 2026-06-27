@@ -119,9 +119,6 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 endif()
 
 set(ARTIFACT_DIR "${CMAKE_BINARY_DIR}/Artifacts")
-set(Textures
-	"${DATA_DIR}/Textures/SeaSparrow/Effects/SEA_Empty.dds"
-)
 
 # ---- Compile Papyrus Scripts and Pack Into Archive ----
 include(Papyrus)
@@ -148,7 +145,6 @@ if(EXISTS "${PAPYRUS_SOURCE_DIR}" AND IS_DIRECTORY "${Skyrim64Path}")
 		FORMAT SSE
 		FILES 
 			${Papyrus_OUTPUT}
-			${Textures}
 		PREFIX 
 			"${CMAKE_CURRENT_SOURCE_DIR}/Data"
 	)	
@@ -219,26 +215,3 @@ if(DEFINED OUTPUT_FOLDER)
 else()
 	message(STATUS "Output folder environment variable not set, build files will not be automatically deployed to MO2.")
 endif()
-
-# ---- Github Release Stuff ----
-install(
-	FILES
-		"${DATA_DIR}/EnchantmentArtExtender.esl"
-		"${DATA_DIR}/EnchantmentArtExtender.bsa"
-	DESTINATION "."
-	COMPONENT components
-)
-
-install(
-	FILES
-		"${DATA_DIR}/Source/Scripts/EAE_ModObjectsScript.psc"
-	DESTINATION "Source/Scripts"
-	COMPONENT components
-)
-
-install(
-	FILES
-		"${DATA_DIR}/SKSE/Plugins/EnchantmentArtExtender.ini"
-	DESTINATION "SKSE/Plugins"
-	COMPONENT components
-)
