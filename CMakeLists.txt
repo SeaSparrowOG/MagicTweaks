@@ -41,6 +41,7 @@ add_compile_definitions(SKYRIM_SUPPORT_AE)
 
 SKSEPlugin_Add(
 	${PROJECT_NAME}
+	INCLUDE_DIR include
 	SOURCE_DIR src
 	SOURCES
 		README.md

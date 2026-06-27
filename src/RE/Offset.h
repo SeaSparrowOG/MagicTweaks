@@ -16,6 +16,6 @@ namespace RE::Offset
 	}
 	namespace MagicItem
 	{
-		constexpr auto CalculateCost = REL::ID(0);
+		constexpr auto CalculateCost = REL::ID(11321);
 	}
 }
