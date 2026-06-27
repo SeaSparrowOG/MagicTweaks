@@ -1,5 +1,6 @@
 #include "Tweaks.h"
 
+#include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 #include "Settings/JSON/JSONSettings.h"
 

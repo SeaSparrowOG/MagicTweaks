@@ -4,6 +4,7 @@
 #include "Events/Events.h"
 #include "Hooks/Hooks.h"
 #include "Papyrus/Papyrus.h"
+#include "ProjectileManager/ProjectileManager.h"
 #include "Serialization/Serde.h"
 #include "Settings/INI/INISettings.h"
 #include "Settings/JSON/JSONSettings.h"
@@ -39,6 +40,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		SECTION_SEPARATOR;
 		if (!BoundEffectManager::InitializeBoundEffectManager()) {
 			SKSE::stl::report_and_fail("Failed to initialize the Bound Effect Manager. Check the log for more information."sv);
+		}
+		SECTION_SEPARATOR;
+		if (!ProjectileManager::InitializeProjectileManager()) {
+			SKSE::stl::report_and_fail("Failed to initialize the Projectile Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		logger::info("Finished startup tasks, enjoy your game!"sv);

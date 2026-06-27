@@ -14,4 +14,8 @@ namespace RE::Offset
 	{
 		constexpr auto GetItemCount = REL::ID(21435);
 	}
+	namespace MagicItem
+	{
+		constexpr auto CalculateCost = REL::ID(0);
+	}
 }

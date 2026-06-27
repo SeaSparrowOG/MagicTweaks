@@ -11,7 +11,7 @@ namespace Serialization
 		public:
 			virtual bool Save(SKSE::SerializationInterface* a_intfc) = 0;
 			virtual bool Load(SKSE::SerializationInterface* a_intfc) = 0;
-			virtual void Revert(SKSE::SerializationInterface* a_intfc) = 0;
+			virtual void Revert(SKSE::SerializationInterface* a_intfc) { (void)a_intfc; };
 
 			template <typename T>
 			bool RegisterForSerialization(T* object, uint32_t type) {

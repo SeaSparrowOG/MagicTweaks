@@ -6,6 +6,7 @@
 #include "MagickaShield/MagickaShield.h"
 #include "MagicTarget/MagicTargetHooks.h"
 #include "PlayerCharacter/PlayerCharacterHooks.h"
+#include "Projectiles/ProjectileHooks.h"
 #include "Hooks/Fixes/Fixes.h"
 #include "Tweaks/Tweaks.h"
 #include "Settings/INI/INISettings.h"
@@ -51,6 +52,7 @@ namespace Hooks {
 		success &= Hooks::Fixes::InstallFixes();
 		success &= Hooks::Tweaks::InstallTweaks();
 		success &= Hooks::MagickaShield::InstallMagickaShield();
+		success &= Hooks::Projectiles::Install();
 		if (!success) {
 			logger::error("Failed to install all hooks, aborting load..."sv);
 			return false;
