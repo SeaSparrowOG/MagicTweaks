@@ -7,7 +7,7 @@ namespace Events
 		bool RegisterHitEvent();
 
 		class ConjurationHitManager : 
-			public REX::Singleton<ConjurationHitManager>,
+			public REX::TSingleton<ConjurationHitManager>,
 			public RE::BSTEventSink<RE::TESHitEvent>
 		{
 		public:

@@ -186,7 +186,7 @@ namespace ConditionParser
 
 		const auto player = RE::PlayerCharacter::GetSingleton();
 		if (!player) {
-			logger::critical("Failed to get the player or SpellItemDescirptionSingleton. This will likely cause a crash later.");
+			REX::CRITICAL("Failed to get the player or SpellItemDescirptionSingleton. This will likely cause a crash later.");
 			return "";
 		}
 

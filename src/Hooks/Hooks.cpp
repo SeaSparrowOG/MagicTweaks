@@ -12,35 +12,7 @@
 
 namespace Hooks {
 	bool Install() {
-		logger::info("Installing hooks..."sv);
-
-		size_t allocSize = 0u;
-
-		auto tweakReduction = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION);
-		if (tweakReduction && tweakReduction.value()) {
-			allocSize += 33u; // 2 * 14 + 5
-		}
-		bool installDynamicDescription = Settings::INI::GetSetting<bool>(Settings::INI::DYNAMIC_SPELL_DESCRIPTIONS).value_or(false);
-		if (installDynamicDescription) {
-			allocSize += 42u; // 3 * 14
-		}
-		bool installConditionPatch = Settings::INI::GetSetting<bool>(Settings::INI::ADDITIONAL_CONDITIONS).value_or(false);
-		if (installConditionPatch) {
-			allocSize += 14u; // 1 * 14
-		}
-		bool installMagickaShield = Settings::INI::GetSetting<bool>(Settings::INI::MAGICKA_SHIELD).value_or(false);
-		if (installMagickaShield) {
-			allocSize += 33u; // 2 * 14 + 5
-		}
-		bool installCloakFix = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
-		if (installCloakFix) {
-			allocSize += 14u; // 14
-		}
-
-		if (allocSize > 0u) {
-			logger::info("  Allocating trampoline size {}"sv, allocSize);
-			SKSE::AllocTrampoline(allocSize);
-		}
+		REX::INFO("Installing hooks..."sv);
 
 		bool success = true;
 		success &= Hooks::Conditions::Install();
@@ -52,7 +24,7 @@ namespace Hooks {
 		success &= Hooks::Tweaks::InstallTweaks();
 		success &= Hooks::MagickaShield::InstallMagickaShield();
 		if (!success) {
-			logger::error("Failed to install all hooks, aborting load..."sv);
+			REX::ERROR("Failed to install all hooks, aborting load..."sv);
 			return false;
 		}
 
@@ -64,7 +36,7 @@ namespace Hooks {
 
 		auto* effectDispeler = Tweaks::SpellDispeler::GetSingleton();
 		if (!effectDispeler) {
-			logger::critical("Failed to get internal effect dispeler manager."sv);
+			REX::CRITICAL("Failed to get internal effect dispeler manager."sv);
 			return false;
 		}
 		success &= effectDispeler->LoadJSONSettings();

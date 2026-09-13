@@ -5,7 +5,7 @@
 namespace Hooks::MagicTarget
 {
 	bool Install() {
-		logger::info("  >Installing Magic Target Hooks..."sv);
+		REX::INFO("  >Installing Magic Target Hooks..."sv);
 		EffectAddedHook::Install();
 		EffectRemovedHook::Install();
 		return true;

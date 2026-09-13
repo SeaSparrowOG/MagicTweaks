@@ -6,10 +6,10 @@ namespace ConditionManager
 {
 	bool Initialize() {
 		SECTION_SEPARATOR;
-		logger::info("Initializing the Condition Manager..."sv);
+		REX::INFO("Initializing the Condition Manager..."sv);
 		auto* manager = ConditionManager::GetSingleton();
 		if (!manager) {
-			logger::info("  >Failed to get internal singleton."sv);
+			REX::INFO("  >Failed to get internal singleton."sv);
 			return false;
 		}
 		return manager->Initialize();
@@ -17,36 +17,36 @@ namespace ConditionManager
 
 	bool ConditionManager::Initialize() {
 		bool nominal = true;
-		logger::info("  >Caching mod objects..."sv);
+		REX::INFO("  >Caching mod objects..."sv);
 
 		conjuredCount = Data::ModObject<RE::TESBoundObject>(Data::MAGIC_COUNT_SUMMONED);
 		if (!conjuredCount) {
-			logger::critical("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED);
+			REX::CRITICAL("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED);
 			nominal = false;
 		}
 		totalCount = Data::ModObject<RE::TESBoundObject>(Data::MAGIC_COUNT_COMMANDED_CONJURATION);
 		if (!totalCount) {
-			logger::critical("    >Failed to cache {}", Data::MAGIC_COUNT_COMMANDED_CONJURATION);
+			REX::CRITICAL("    >Failed to cache {}", Data::MAGIC_COUNT_COMMANDED_CONJURATION);
 			nominal = false;
 		}
 		fireCount = Data::ModObject<RE::TESBoundObject>(Data::MAGIC_COUNT_SUMMONED_FIRE);
 		if (!fireCount) {
-			logger::critical("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED_FIRE);
+			REX::CRITICAL("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED_FIRE);
 			nominal = false;
 		}
 		frostCount = Data::ModObject<RE::TESBoundObject>(Data::MAGIC_COUNT_SUMMONED_FROST);
 		if (!frostCount) {
-			logger::critical("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED_FROST);
+			REX::CRITICAL("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED_FROST);
 			nominal = false;
 		}
 		shockCount = Data::ModObject<RE::TESBoundObject>(Data::MAGIC_COUNT_SUMMONED_SHOCK);
 		if (!shockCount) {
-			logger::critical("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED_SHOCK);
+			REX::CRITICAL("    >Failed to cache {}", Data::MAGIC_COUNT_SUMMONED_SHOCK);
 			nominal = false;
 		}
 		reanimatedCount = Data::ModObject<RE::TESBoundObject>(Data::MAGIC_COUNT_REANIMATED);
 		if (!reanimatedCount) {
-			logger::critical("    >Failed to cache {}", Data::MAGIC_COUNT_REANIMATED);
+			REX::CRITICAL("    >Failed to cache {}", Data::MAGIC_COUNT_REANIMATED);
 			nominal = false;
 		}
 
@@ -54,7 +54,7 @@ namespace ConditionManager
 			return false;
 		}
 
-		logger::info("Initialized successfully."sv);
+		REX::INFO("Initialized successfully."sv);
 		return true;
 	}
 

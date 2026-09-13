@@ -20,7 +20,7 @@ namespace Hooks::Tweaks {
 	};
 
 	class SpellDispeler :
-		public REX::Singleton<SpellDispeler>
+		public REX::TSingleton<SpellDispeler>
 	{
 	public:
 		bool Install();

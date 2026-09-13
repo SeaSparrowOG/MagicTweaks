@@ -10,18 +10,18 @@ namespace Hooks::Conditions
 		if (!Settings::INI::GetSetting<bool>(Settings::INI::ADDITIONAL_CONDITIONS).value_or(false)) {
 			return true;
 		}
-		logger::info("  >Installing condition-related hooks..."sv);
+		REX::INFO("  >Installing condition-related hooks..."sv);
 		return GetActorItemCountHook::Install();
 	}
 
 	bool GetActorItemCountHook::Install() {
-		logger::info("    >Installing GetItemCount hook."sv);
+		REX::INFO("    >Installing GetItemCount hook."sv);
 		REL::Relocation<std::uintptr_t> target{ RE::Offset::TESObjectREFR::GetItemCount, 0xAE };
-		if (!REL::make_pattern<"E8">().match(target.address())) {
-			logger::critical("      >Failed to match expected pattern (E8)."sv);
+		if (!REL::Pattern<"E8">().match(target.address())) {
+			REX::CRITICAL("      >Failed to match expected pattern (E8)."sv);
 			return false;
 		}
-		auto& trampoline = SKSE::GetTrampoline();
+		auto& trampoline = REL::GetTrampoline();
 		_getItemCount = trampoline.write_call<5>(target.address(), GetItemCount);
 		return true;
 	}

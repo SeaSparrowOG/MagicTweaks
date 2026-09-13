@@ -5,7 +5,7 @@ namespace Serialization::SerializationManager
 	bool ObjectManager::Save(SKSE::SerializationInterface* a_intfc) {
 		for (auto& obj : recordObjectMap) {
 			if (!obj.second->Save(a_intfc)) {
-				logger::error("Serialization failed."sv);
+				REX::ERROR("Serialization failed."sv);
 				return false;
 			}
 		}
@@ -19,12 +19,12 @@ namespace Serialization::SerializationManager
 		while (a_intfc->GetNextRecordInfo(type, version, length)) {
 			if (recordObjectMap.contains(type)) {
 				if (!recordObjectMap.at(type)->Load(a_intfc)) {
-					logger::error("De-Serialization failed."sv);
+					REX::ERROR("De-Serialization failed."sv);
 					return false;
 				}
 			}
 			else {
-				logger::warn("Caught bad record of type {}", DecodeTypeCode(type));
+				REX::WARN("Caught bad record of type {}", DecodeTypeCode(type));
 			}
 		}
 		return true;
@@ -40,7 +40,7 @@ namespace Serialization::SerializationManager
 	void ObjectManager::RegisterObject(Serializable* a_newObject, uint32_t a_recordType) {
 #ifndef NDEBUG
 		if (recordObjectMap.contains(a_recordType)) {
-			SKSE::stl::report_and_fail(fmt::format("Tried to serialize object twice."sv));
+			REX::FAIL(fmt::format("Tried to serialize object twice."sv));
 		}
 #endif
 		recordObjectMap.emplace(a_recordType, a_newObject);

@@ -15,10 +15,10 @@ namespace Serialization
 
 			template <typename T>
 			bool RegisterForSerialization(T* object, uint32_t type) {
-				logger::info("  >Registering for Save/Load events..."sv);
+				REX::INFO("  >Registering for Save/Load events..."sv);
 				auto* manager = ObjectManager::GetSingleton();
 				if (!manager) {
-					logger::critical("    >Failed to get Serialization Object Manager."sv);
+					REX::CRITICAL("    >Failed to get Serialization Object Manager."sv);
 					return false;
 				}
 
@@ -28,7 +28,7 @@ namespace Serialization
 			}
 		};
 
-		class ObjectManager : public REX::Singleton<ObjectManager>
+		class ObjectManager : public REX::TSingleton<ObjectManager>
 		{
 		public:
 			bool Save(SKSE::SerializationInterface* a_intfc);

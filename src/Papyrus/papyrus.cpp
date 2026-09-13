@@ -33,18 +33,18 @@ namespace Papyrus
 	}
 
 	static void Bind(VM& a_vm) {
-		logger::info("  >Binding GetVersion..."sv);
+		REX::INFO("  >Binding GetVersion..."sv);
 		BIND(GetVersion);
-		logger::info("  >Binding UnBindAllSpells..."sv);
+		REX::INFO("  >Binding UnBindAllSpells..."sv);
 		BIND(UnBindAllSpells);
-		logger::info("  >Binding UnBindSpell..."sv);
+		REX::INFO("  >Binding UnBindSpell..."sv);
 		BIND(UnBindSpell);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {
-		logger::info("Binding papyrus functions in utility script {}..."sv, script);
+		REX::INFO("Binding papyrus functions in utility script {}..."sv, script);
 		Bind(*a_vm);
-		logger::info("Finished binding functions."sv);
+		REX::INFO("Finished binding functions."sv);
 		return true;
 	}
 }

@@ -97,14 +97,14 @@ namespace Hooks {
 		bool Character::InstallCharacterFixes() {
 			REL::Relocation<std::uintptr_t> VTABLE{ RE::Character::VTABLE[4] };
 			_func = VTABLE.write_vfunc(0xB, CharacterThunk);
-			logger::info("    >Installed Character Magic Target VFunc hook."sv);
+			REX::INFO("    >Installed Character Magic Target VFunc hook."sv);
 			return true;
 		}
 
 		bool Player::InstallPlayerFixes() {
 			REL::Relocation<std::uintptr_t> VTABLE{ RE::PlayerCharacter::VTABLE[4] };
 			_func = VTABLE.write_vfunc(0xB, PlayerThunk);
-			logger::info("    >Installed Player Character Magic Target VFunc hook."sv);
+			REX::INFO("    >Installed Player Character Magic Target VFunc hook."sv);
 			return true;
 		}
 
@@ -127,19 +127,19 @@ namespace Hooks {
 		}
 
 		bool CloakArchetypeFix::InstallCloakFix() {
-			logger::info("    >Installing the Cloak Archetype Fix..."sv);
+			REX::INFO("    >Installing the Cloak Archetype Fix..."sv);
 			const bool shouldInstall = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
 			if (!shouldInstall) {
-				logger::info("      User chose not to install the fix."sv);
+				REX::INFO("      User chose not to install the fix."sv);
 				return true;
 			}
 
 			REL::Relocation<std::uintptr_t> target{ RE::Offset::AnonymousNamespace::ResetElapsedTimeMagicEffects, 0x72 };
-			if (!REL::make_pattern<"E8">().match(target.address())) {
-				logger::critical("    >Failed to validate the hook pattern."sv);
+			if (!REL::Pattern<"E8">().match(target.address())) {
+				REX::CRITICAL("    >Failed to validate the hook pattern."sv);
 				return false;
 			}
-			auto& trampoline = SKSE::GetTrampoline();
+			auto& trampoline = REL::GetTrampoline();
 			_func = trampoline.write_call<5>(target.address(), &ResetCloakEffect);
 			return true;
 		}

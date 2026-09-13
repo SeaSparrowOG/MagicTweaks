@@ -7,7 +7,7 @@ namespace BoundEffectManager
 	bool InitializeBoundEffectManager();
 
 	class BoundEffectManager final :
-		public REX::Singleton<BoundEffectManager>,
+		public REX::TSingleton<BoundEffectManager>,
 		public Serialization::SerializationManager::Serializable
 	{
 	public:

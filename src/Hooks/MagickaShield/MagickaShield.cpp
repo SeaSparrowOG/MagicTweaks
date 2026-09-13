@@ -10,10 +10,10 @@ namespace Hooks::MagickaShield
 {
 	bool Hooks::MagickaShield::InstallMagickaShield()
 	{
-		logger::info("  Installing Magicka Shield..."sv);
+		REX::INFO("  Installing Magicka Shield..."sv);
 		bool success = true;
 		if (!Settings::INI::GetSetting<bool>(Settings::INI::MAGICKA_SHIELD).value_or(false)) {
-			logger::info("    >User chose not to install Magicka Shield."sv);
+			REX::INFO("    >User chose not to install Magicka Shield."sv);
 			return success;
 		}
 		success &= MagickaShieldHandler::InstallHandler();
@@ -35,19 +35,19 @@ namespace Hooks::MagickaShield
 			}
 		};
 
-		auto& trampoline = SKSE::GetTrampoline();
+		auto& trampoline = REL::GetTrampoline();
 		const REL::Relocation<std::uintptr_t> target{ RE::Offset::Actor::DoDamage };
 
-		if (REL::make_pattern<"E9">().match(target.address())) {
-			logger::warn("    >Unexpected match - E9. Writing branch instead."sv);
-			_hitActor = trampoline.write_branch<5>(target.address(), ApplyMagickaShield);
+		if (REL::Pattern<"E9">().match(target.address())) {
+			REX::WARN("    >Unexpected match - E9. Writing branch instead."sv);
+			_hitActor = trampoline.write_jmp<5>(target.address(), ApplyMagickaShield);
 			return true;
 		}
 
 		Patch p(target.address(), 5);
 		p.ready();
 
-		trampoline.write_branch<5>(target.address(), ApplyMagickaShield);
+		trampoline.write_jmp<5>(target.address(), ApplyMagickaShield);
 
 		auto alloc = trampoline.allocate(p.getSize());
 		memcpy(alloc, p.getCode(), p.getSize());

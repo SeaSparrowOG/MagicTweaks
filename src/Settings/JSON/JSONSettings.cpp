@@ -3,10 +3,10 @@
 namespace Settings::JSON
 {
 	bool Read() {
-		logger::info("Reading JSON settings..."sv);
+		REX::INFO("Reading JSON settings..."sv);
 		auto* reader = Reader::GetSingleton();
 		if (!reader) {
-			logger::critical("  >Failed to fetch the reader singleton."sv);
+			REX::CRITICAL("  >Failed to fetch the reader singleton."sv);
 			return false;
 		}
 		return reader->Read();
@@ -16,14 +16,14 @@ namespace Settings::JSON
 	{
 		dataHandler = RE::TESDataHandler::GetSingleton();
 		if (!dataHandler) {
-			logger::critical("Failed to get the game's Data Handler."sv);
+			REX::CRITICAL("Failed to get the game's Data Handler."sv);
 			return false;
 		}
 
 		std::string jsonFolder = fmt::format(R"(.\Data\SKSE\Plugins\{})"sv, Plugin::NAME);
-		logger::info("  >Settings folder: {}."sv, jsonFolder);
+		REX::INFO("  >Settings folder: {}."sv, jsonFolder);
 		if (!std::filesystem::exists(jsonFolder)) {
-			logger::info("    >No settings folder found."sv);
+			REX::INFO("    >No settings folder found."sv);
 			return true;
 		}
 
@@ -36,20 +36,20 @@ namespace Settings::JSON
 			}
 
 			std::sort(paths.begin(), paths.end());
-			logger::info("    >Found {} configuration files."sv, std::to_string(paths.size()));
+			REX::INFO("    >Found {} configuration files."sv, std::to_string(paths.size()));
 		}
 		catch (const std::exception& e) {
-			logger::warn("Caught {} while reading files."sv, e.what());
+			REX::WARN("Caught {} while reading files."sv, e.what());
 			return false;
 		}
 		if (paths.empty()) {
-			logger::info("    >No settings found"sv);
+			REX::INFO("    >No settings found"sv);
 			return true;
 		}
 
 		for (const auto& path : paths) {
 			auto configName = path.substr(jsonFolder.size() + 1, path.size() - 1);
-			logger::info("    >Reading config {}..."sv, configName);
+			REX::INFO("    >Reading config {}..."sv, configName);
 			Json::Reader JSONReader;
 			Json::Value JSONFile;
 			try {
@@ -57,21 +57,21 @@ namespace Settings::JSON
 				JSONReader.parse(rawJSON, JSONFile);
 
 				if (!ReadConfig(JSONFile)) {
-					logger::warn("      >Config treated as invalid, skipping."sv);
+					REX::WARN("      >Config treated as invalid, skipping."sv);
 					continue;
 				}
 			}
 			catch (const Json::Exception& e) {
-				logger::warn("Caught {} while reading files.", e.what());
+				REX::WARN("Caught {} while reading files.", e.what());
 				continue;
 			}
 			catch (const std::exception& e) {
-				logger::error("Caught unhandled exception {} while reading files.", e.what());
+				REX::ERROR("Caught unhandled exception {} while reading files.", e.what());
 				continue;
 			}
 		}
 
-		logger::info("Finished reading all settings."sv);
+		REX::INFO("Finished reading all settings."sv);
 		return true;
 	}
 
@@ -79,18 +79,18 @@ namespace Settings::JSON
 		const auto& minVersionField = a_json[MINIMUM_VERSION_FIELD];
 		if (minVersionField) {
 			if (!minVersionField.isInt()) {
-				logger::warn("      >Config has {} specified, but it is not an integer."sv, MINIMUM_VERSION_FIELD);
+				REX::WARN("      >Config has {} specified, but it is not an integer."sv, MINIMUM_VERSION_FIELD);
 				return false;
 			}
 			auto requiredVer = minVersionField.asInt();
 			if (requiredVer < 1 || requiredVer > std::numeric_limits<uint8_t>::max()) {
-				logger::warn("      >Config has {} specified, but its required version is either too large or too small."sv, MINIMUM_VERSION_FIELD);
+				REX::WARN("      >Config has {} specified, but its required version is either too large or too small."sv, MINIMUM_VERSION_FIELD);
 				return false;
 			}
 
 			auto sanitizedVer = static_cast<uint8_t>(requiredVer);
 			if (PARSER_VERSION < sanitizedVer) {
-				logger::warn("      >Config requires parser version {}, but the current parser is version {}."sv, sanitizedVer, PARSER_VERSION);
+				REX::WARN("      >Config requires parser version {}, but the current parser is version {}."sv, sanitizedVer, PARSER_VERSION);
 				return false;
 			}
 		}

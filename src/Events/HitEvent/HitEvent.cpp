@@ -5,10 +5,10 @@
 namespace Events::HitEvent
 {
 	bool RegisterHitEvent() {
-		logger::info("  Registering Conjuration Hit Experience Listener..."sv);
+		REX::INFO("  Registering Conjuration Hit Experience Listener..."sv);
 		auto installRaw = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_EARN_EXP);
 		if (!installRaw || !installRaw.value()) {
-			logger::info("    >User chose not to install the patch."sv);
+			REX::INFO("    >User chose not to install the patch."sv);
 			return true;
 		}
 
@@ -19,7 +19,7 @@ namespace Events::HitEvent
 	bool ConjurationHitManager::Register() {
 		auto source = RE::ScriptEventSourceHolder::GetSingleton();
 		if (!source) {
-			logger::error("    >Failed to get event source holder, aborting load..."sv);
+			REX::ERROR("    >Failed to get event source holder, aborting load..."sv);
 			return false;
 		}
 		source->AddEventSink(this);

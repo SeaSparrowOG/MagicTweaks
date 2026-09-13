@@ -6,10 +6,10 @@
 namespace Events::CombatEvent
 {
 	bool RegisterCombatEvent() {
-		logger::info("  Registering Combat State Listener..."sv);
+		REX::INFO("  Registering Combat State Listener..."sv);
 		auto install = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_EARN_EXP).value_or(false);
 		if (!install) {
-			logger::info("    >User chose not to install the patch."sv);
+			REX::INFO("    >User chose not to install the patch."sv);
 			return true;
 		}
 
@@ -20,7 +20,7 @@ namespace Events::CombatEvent
 	bool CombatChangeManager::RegisterCombatListener() {
 		auto source = RE::ScriptEventSourceHolder::GetSingleton();
 		if (!source) {
-			logger::error("    >Failed to get event source holder, aborting load..."sv);
+			REX::ERROR("    >Failed to get event source holder, aborting load..."sv);
 			return false;
 		}
 		source->AddEventSink(this);
