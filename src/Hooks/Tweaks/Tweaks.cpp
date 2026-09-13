@@ -1,5 +1,6 @@
 #include "Tweaks.h"
 
+#include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 #include "Settings/JSON/JSONSettings.h"
 
@@ -21,7 +22,7 @@ namespace Hooks::Tweaks
 		if (installSheatheTweak) {
 			auto* dispeler = SpellDispeler::GetSingleton();
 			if (!dispeler) {
-				logger::critical("Failed to get internal spell dispeler manager."sv);
+				REX::CRITICAL("Failed to get internal spell dispeler manager."sv);
 				return false;
 			}
 			success &= dispeler->Install();
@@ -64,13 +65,13 @@ namespace Hooks::Tweaks
 			}
 		};
 
-		auto& trampoline = SKSE::GetTrampoline();
+		auto& trampoline = REL::GetTrampoline();
 		const REL::Relocation<std::uintptr_t> target{ RE::Offset::MagicItem::CalculateCost };
 
 		Patch p(target.address(), 5);
 		p.ready();
 
-		trampoline.write_branch<5>(target.address(), ProcessSpellReduction);
+		trampoline.write_jmp<5>(target.address(), ProcessSpellReduction);
 
 		auto alloc = trampoline.allocate(p.getSize());
 		memcpy(alloc, p.getCode(), p.getSize());
@@ -163,7 +164,7 @@ namespace Hooks::Tweaks
 	bool SpellDispeler::LoadJSONSettings() {
 		auto* reader = Settings::JSON::Reader::GetSingleton();
 		if (!reader) {
-			logger::critical("Failed to fetch internal Spell Dispeler singleton."sv);
+			REX::CRITICAL("Failed to fetch internal Spell Dispeler singleton."sv);
 			return false;
 		}
 
@@ -208,11 +209,11 @@ namespace Hooks::Tweaks
 					}
 				}
 				else {
-					logger::warn("Ran into non-string and non-array object in {}.", SheatheArray);
+					REX::WARN("Ran into non-string and non-array object in {}.", SheatheArray);
 				}
 			}
 			else {
-				logger::warn("Ran into top level non-object config, ignoring for Spell Dispeler."sv);
+				REX::WARN("Ran into top level non-object config, ignoring for Spell Dispeler."sv);
 			}
 		}
 		return true;
@@ -221,14 +222,14 @@ namespace Hooks::Tweaks
 	bool SpellDispeler::PlayerDrawMonitor::Install() {
 		auto* iniHolder = Settings::INI::Holder::GetSingleton();
 		if (!iniHolder) {
-			logger::critical("    >Failed to fetch ini settings holder for the Seathe monitor."sv);
+			REX::CRITICAL("    >Failed to fetch ini settings holder for the Seathe monitor."sv);
 			return false;
 		}
 
 		auto installRaw = iniHolder->GetStoredSetting<bool>(setting);
 		bool install = installRaw.has_value() ? installRaw.value() : false;
 		if (!installRaw.has_value()) {
-			logger::warn("    >Setting {} not found in ini settings, treating as false.", setting);
+			REX::WARN("    >Setting {} not found in ini settings, treating as false.", setting);
 		}
 		if (!install) {
 			return true;
@@ -236,7 +237,7 @@ namespace Hooks::Tweaks
 
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::PlayerCharacter::VTABLE[0] };
 		_func = VTABLE.write_vfunc(offset, Thunk);
-		logger::info("    >Installed Player VFunc hook."sv);
+		REX::INFO("    >Installed Player VFunc hook."sv);
 		return true;
 	}
 

@@ -5,7 +5,7 @@
 namespace Hooks::PlayerCharacter
 {
 	bool Install() {
-		logger::info("  >Installing Player Character Hooks..."sv);
+		REX::INFO("  >Installing Player Character Hooks..."sv);
 		UpdateHook::Install();
 		return true;
 	}

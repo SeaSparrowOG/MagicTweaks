@@ -8,7 +8,7 @@ namespace Settings
 	{
 		bool Read();
 
-		class Reader : public REX::Singleton<Reader>
+		class Reader : public REX::TSingleton<Reader>
 		{
 		public:
 			bool Read();
@@ -69,7 +69,7 @@ namespace Settings
 						}
 					}
 					catch (std::exception& e) {
-						logger::error("Caught exception: {}", e.what());
+						REX::ERROR("Caught exception: {}", e.what());
 						return response;
 					}
 				}

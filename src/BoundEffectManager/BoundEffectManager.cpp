@@ -7,17 +7,17 @@
 namespace BoundEffectManager
 {
 	bool InitializeBoundEffectManager() {
-		logger::info("Starting up the Bound Effect Manager..."sv);
+		REX::INFO("Starting up the Bound Effect Manager..."sv);
 		auto* manager = BoundEffectManager::GetSingleton();
 		if (!manager) {
-			logger::info("  >Failed to get internal singleton."sv);
+			REX::INFO("  >Failed to get internal singleton."sv);
 			return false;
 		}
 		return manager->Initialize();
 	}
 
 	bool BoundEffectManager::Initialize() {
-		logger::info("  >Caching game forms..."sv);
+		REX::INFO("  >Caching game forms..."sv);
 
 		enabled = Settings::INI::GetSetting<bool>(Settings::INI::BOUND_SPELLS).value_or(false);
 		if (!enabled) {
@@ -27,39 +27,39 @@ namespace BoundEffectManager
 		bool nominal = true;
 		player = RE::PlayerCharacter::GetSingleton();
 		if (!player) {
-			logger::critical("    >Failed to cache the player.");
+			REX::CRITICAL("    >Failed to cache the player.");
 			nominal = false;
 		}
 
 		if (!nominal) {
-			logger::critical("  >Failed to cache game forms."sv);
+			REX::CRITICAL("  >Failed to cache game forms."sv);
 			return false;
 		}
 
-		logger::info("  >Caching mod forms..."sv);
+		REX::INFO("  >Caching mod forms..."sv);
 		bindHealthKeyword = Data::ModObject<RE::BGSKeyword>(BindHealthKeywordID);
 		if (!bindHealthKeyword) {
-			logger::critical("    >Failed to cache {}", BindHealthKeywordID);
+			REX::CRITICAL("    >Failed to cache {}", BindHealthKeywordID);
 			nominal = false;
 		}
 		bindStaminaKeyword = Data::ModObject<RE::BGSKeyword>(BindStaminaKeywordID);
 		if (!bindStaminaKeyword) {
-			logger::critical("    >Failed to cache {}", BindStaminaKeywordID);
+			REX::CRITICAL("    >Failed to cache {}", BindStaminaKeywordID);
 			nominal = false;
 		}
 		bindMagickaKeyword = Data::ModObject<RE::BGSKeyword>(BindMagickaKeywordID);
 		if (!bindMagickaKeyword) {
-			logger::critical("    >Failed to cache {}", BindMagickaKeywordID);
+			REX::CRITICAL("    >Failed to cache {}", BindMagickaKeywordID);
 			nominal = false;
 		}
 		if (!nominal) {
-			logger::critical("  >Failed to cache mod forms. This means that the Armillary_ModObjectsQuest Quest in Armillary.esm is either overwritten or corrupted."sv);
+			REX::CRITICAL("  >Failed to cache mod forms. This means that the Armillary_ModObjectsQuest Quest in Armillary.esm is either overwritten or corrupted."sv);
 			return false;
 		}
 
 		auto* serdeManager = Serialization::SerializationManager::ObjectManager::GetSingleton();
 		if (!serdeManager) {
-			logger::critical("  Failed to register self as a serializable form."sv);
+			REX::CRITICAL("  Failed to register self as a serializable form."sv);
 			return false;
 		}
 		serdeManager->RegisterObject(this, RecordType);
@@ -68,28 +68,28 @@ namespace BoundEffectManager
 
 	bool BoundEffectManager::Save(SKSE::SerializationInterface* a_intfc) {
 		loading = true;
-		logger::info("  >Saving Bound Effect Manager state..."sv);
+		REX::INFO("  >Saving Bound Effect Manager state..."sv);
 		if (!a_intfc->OpenRecord(RecordType, Serialization::Version)) {
-			logger::error("    >Error serializing Bound Effects!"sv);
+			REX::ERROR("    >Error serializing Bound Effects!"sv);
 			loading = false;
 			return false;
 		}
 		if (!a_intfc->WriteRecordData(totalHealthBound)) {
-			logger::error("    >Error writing Bound Health."sv);
+			REX::ERROR("    >Error writing Bound Health."sv);
 			loading = false;
 			return false;
 		}
 		if (!a_intfc->WriteRecordData(totalStaminaBound)) {
-			logger::error("    >Error writing Bound Stamina."sv);
+			REX::ERROR("    >Error writing Bound Stamina."sv);
 			loading = false;
 			return false;
 		}
 		if (!a_intfc->WriteRecordData(totalMagickaBound)) {
-			logger::error("    >Error writing Bound Magicka."sv);
+			REX::ERROR("    >Error writing Bound Magicka."sv);
 			loading = false;
 			return false;
 		}
-		logger::info("    >Success."sv);
+		REX::INFO("    >Success."sv);
 		loading = false;
 		return true;
 	}
@@ -97,17 +97,17 @@ namespace BoundEffectManager
 	bool BoundEffectManager::Load(SKSE::SerializationInterface* a_intfc) {
 		loading = true;
 		if (!a_intfc->ReadRecordData(totalHealthBound)) {
-			logger::critical("    >Failed to deserialize Bound Health."sv);
+			REX::CRITICAL("    >Failed to deserialize Bound Health."sv);
 			loading = false;
 			return false;
 		}
 		if (!a_intfc->ReadRecordData(totalStaminaBound)) {
-			logger::critical("    >Failed to deserialize Bound Stamina."sv);
+			REX::CRITICAL("    >Failed to deserialize Bound Stamina."sv);
 			loading = false;
 			return false;
 		}
 		if (!a_intfc->ReadRecordData(totalMagickaBound)) {
-			logger::critical("    >Failed to deserialize Bound Magicka."sv);
+			REX::CRITICAL("    >Failed to deserialize Bound Magicka."sv);
 			loading = false;
 			return false;
 		}

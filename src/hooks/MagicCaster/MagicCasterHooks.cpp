@@ -5,7 +5,7 @@
 namespace Hooks::MagicCaster
 {
 	bool Install() {
-		logger::info("  >Installing Magic Caster Hooks..."sv);
+		REX::INFO("  >Installing Magic Caster Hooks..."sv);
 		CheckCastHook::Install();
 		return true;
 	}

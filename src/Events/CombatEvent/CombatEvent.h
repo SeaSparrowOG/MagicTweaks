@@ -7,7 +7,7 @@ namespace Events
 		bool RegisterCombatEvent();
 
 		class CombatChangeManager :
-			public REX::Singleton<CombatChangeManager>,
+			public REX::TSingleton<CombatChangeManager>,
 			public RE::BSTEventSink<RE::TESCombatEvent>
 		{
 		public:

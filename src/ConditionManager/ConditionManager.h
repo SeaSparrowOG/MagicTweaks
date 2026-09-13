@@ -4,7 +4,7 @@ namespace ConditionManager
 {
 	bool Initialize();
 
-	class ConditionManager : public REX::Singleton<ConditionManager>
+	class ConditionManager : public REX::TSingleton<ConditionManager>
 	{
 	public:
 		bool Initialize();

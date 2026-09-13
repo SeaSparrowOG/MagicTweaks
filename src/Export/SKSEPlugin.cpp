@@ -14,19 +14,19 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:
 		SECTION_SEPARATOR;
 		if (!Data::PreloadModObjects()) {
-			SKSE::stl::report_and_fail("Failed to preload mod objects. Check the log for more information."sv);
+			REX::FAIL("Failed to preload mod objects. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		if (!Settings::JSON::Read()) {
-			SKSE::stl::report_and_fail("Failed to read JSON settings. Check the log for more information."sv);
+			REX::FAIL("Failed to read JSON settings. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		if (!ConditionManager::Initialize()) {
-			SKSE::stl::report_and_fail("Failed to initialize the Condition Manager. Check the log for more information."sv);
+			REX::FAIL("Failed to initialize the Condition Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		if (!Hooks::ReadSettings()) {
-			SKSE::stl::report_and_fail("Failed to read hook-related settings. Check the log for more information."sv);
+			REX::FAIL("Failed to read hook-related settings. Check the log for more information."sv);
 		}
 
 		//TODO: actually do this correctly
@@ -34,14 +34,14 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 
 		SECTION_SEPARATOR;
 		if (!Events::Register()) {
-			SKSE::stl::report_and_fail("Failed to register events. Check the log for more information."sv);
+			REX::FAIL("Failed to register events. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		if (!BoundEffectManager::InitializeBoundEffectManager()) {
-			SKSE::stl::report_and_fail("Failed to initialize the Bound Effect Manager. Check the log for more information."sv);
+			REX::FAIL("Failed to initialize the Bound Effect Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
-		logger::info("Finished startup tasks, enjoy your game!"sv);
+		REX::INFO("Finished startup tasks, enjoy your game!"sv);
 		break;
 	default:
 		break;
@@ -63,14 +63,14 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
 	}();
 #endif
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
+SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
 	a_info->name = Plugin::NAME.data();
 	a_info->version = Plugin::VERSION[0];
 
 	if (a_skse->IsEditor()) {
-		logger::critical("Loaded in editor, marking as incompatible"sv);
+		REX::CRITICAL("Loaded in editor, marking as incompatible"sv);
 		return false;
 	}
 
@@ -80,17 +80,47 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 #else
 	if (ver < SKSE::RUNTIME_1_5_39) {
 #endif
-		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
+		REX::CRITICAL("Unsupported runtime version {}", ver.string());
 		return false;
 	}
 
 	return true;
 	}
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
+SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 {
-	SKSE::Init(a_skse);
-	logger::info("Author: SeaSparrow"sv);
+	std::size_t allocSize = 0u;
+	bool tweakReduction = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION).value_or(false);
+	if (tweakReduction) {
+		allocSize += 33u; // 2 * 14 + 5
+	}
+	bool installDynamicDescription = Settings::INI::GetSetting<bool>(Settings::INI::DYNAMIC_SPELL_DESCRIPTIONS).value_or(false);
+	if (installDynamicDescription) {
+		allocSize += 42u; // 3 * 14
+	}
+	bool installConditionPatch = Settings::INI::GetSetting<bool>(Settings::INI::ADDITIONAL_CONDITIONS).value_or(false);
+	if (installConditionPatch) {
+		allocSize += 14u; // 1 * 14
+	}
+	bool installMagickaShield = Settings::INI::GetSetting<bool>(Settings::INI::MAGICKA_SHIELD).value_or(false);
+	if (installMagickaShield) {
+		allocSize += 33u; // 2 * 14 + 5
+	}
+	bool installCloakFix = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
+	if (installCloakFix) {
+		allocSize += 14u; // 14
+	}
+
+	SKSE::InitInfo info;
+	info.hook = true;
+	info.log = true;
+	info.logLevel = REX::ELogLevel::Trace;
+	info.logName = Plugin::NAME.data();
+	info.trampoline = true;
+	info.trampolineSize = allocSize;
+
+	SKSE::Init(a_skse, info);
+	REX::INFO("Author: SeaSparrow"sv);
 	SECTION_SEPARATOR;
 
 #ifdef SKYRIM_AE
@@ -100,15 +130,15 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
 	}
 #endif
 
-	logger::info("Performing startup tasks..."sv);
+	REX::INFO("Performing startup tasks..."sv);
 
 	SECTION_SEPARATOR;
 	if (!Settings::INI::Read()) {
-		SKSE::stl::report_and_fail("Failed to load INI settings. Check the log for more information."sv);
+		REX::FAIL("Failed to load INI settings. Check the log for more information."sv);
 	}
 	SECTION_SEPARATOR;
 	if (!Hooks::Install()) {
-		SKSE::stl::report_and_fail("Failed to install hooks. Check the log for more information."sv);
+		REX::FAIL("Failed to install hooks. Check the log for more information."sv);
 	}
 	SECTION_SEPARATOR;
 
@@ -117,13 +147,13 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
 	const auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(&MessageEventCallback);
 
-	logger::info("Setting up serialization system..."sv);
+	REX::INFO("Setting up serialization system..."sv);
 	const auto serialization = SKSE::GetSerializationInterface();
 	serialization->SetUniqueID(Serialization::ID);
 	serialization->SetSaveCallback(&Serialization::SaveCallback);
 	serialization->SetLoadCallback(&Serialization::LoadCallback);
 	serialization->SetRevertCallback(&Serialization::RevertCallback);
-	logger::info("  >Registered necessary functions."sv);
+	REX::INFO("  >Registered necessary functions."sv);
 	SECTION_SEPARATOR;
 
 	return true;
