@@ -1,6 +1,6 @@
 #include "MagickaShield.h"
 
-#include "AVManager/AVManager.h"
+#include "AVManager/AVManager.hpp"
 #include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 

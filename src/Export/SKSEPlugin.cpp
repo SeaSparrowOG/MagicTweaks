@@ -89,33 +89,13 @@ SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 {
-	std::size_t allocSize = 0u;
-	bool tweakReduction = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION).value_or(false);
-	if (tweakReduction) {
-		allocSize += 33u; // 2 * 14 + 5
-	}
-	bool installDynamicDescription = Settings::INI::GetSetting<bool>(Settings::INI::DYNAMIC_SPELL_DESCRIPTIONS).value_or(false);
-	if (installDynamicDescription) {
-		allocSize += 42u; // 3 * 14
-	}
-	bool installConditionPatch = Settings::INI::GetSetting<bool>(Settings::INI::ADDITIONAL_CONDITIONS).value_or(false);
-	if (installConditionPatch) {
-		allocSize += 14u; // 1 * 14
-	}
-	bool installMagickaShield = Settings::INI::GetSetting<bool>(Settings::INI::MAGICKA_SHIELD).value_or(false);
-	if (installMagickaShield) {
-		allocSize += 33u; // 2 * 14 + 5
-	}
-	bool installCloakFix = Settings::INI::GetSetting<bool>(Settings::INI::FIX_CLOAKS).value_or(false);
-	if (installCloakFix) {
-		allocSize += 14u; // 14
-	}
-
+	constexpr std::size_t allocSize = 14u * 5u + 33u * 2u;
 	SKSE::InitInfo info;
 	info.hook = true;
 	info.log = true;
 	info.logLevel = REX::ELogLevel::Trace;
 	info.logName = Plugin::NAME.data();
+	info.logPattern = "[%T.%e] [%=5t] [%L] %v";
 	info.trampoline = true;
 	info.trampolineSize = allocSize;
 
