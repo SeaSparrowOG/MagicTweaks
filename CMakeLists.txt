@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 option(FULL_RELEASE "Finalizes the build, compressing everything into a BSA." OFF)
-option(OUTDATED "Applies 1.5.97 offsets/IDs." OFF)
+option(GOG "Targets 1.6 for GOG." OFF)
 option(BUILD_ARTIFACTS "Turned off during Github actions to get them to stop failing." ON)
 option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." OFF)
 option(COPY_PEX "Copies any generated scripts to the MO2 directory (if specified). Applies after the BSA (if enabled)." OFF)
@@ -10,7 +10,7 @@ option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). 
 # -------- Project ----------
 project(
 	MagicTweaks
-	VERSION 2.4.1
+	VERSION 2.4.2
 	LANGUAGES CXX
 )
 
@@ -32,12 +32,14 @@ list(APPEND CMAKE_MODULE_PATH
 include(SKSEPlugin)
 set(SKSE_USE_XBYAK ON)
 add_compile_definitions(SKSE_SUPPORT_XBYAK)
+add_compile_definitions(SKYRIM_AE)
+add_compile_definitions(SKYRIM_SUPPORT_AE)
 
-if(OUTDATED)
-	add_compile_definitions(SKYRIM_OUTDATED)
+if (GOG)
+	add_compile_definitions(SKYRIM_GOG)
+	set(SKSE_COMMONLIBSSE_PATH, "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE_1.6")
 else()
-	add_compile_definitions(SKYRIM_AE)
-	add_compile_definitions(SKYRIM_SUPPORT_AE)
+	set(SKSE_COMMONLIBSSE_PATH, "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
 endif()
 
 SKSEPlugin_Add(
@@ -69,8 +71,8 @@ include(components.cmake)
 
 # ---- Post build ----
 if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
-	if(OUTDATED)
-		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - Outdated")
+	if(GOG)
+		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - GOG")
 	elseif (FULL_RELEASE)
 		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - Full Release")
 	else()
