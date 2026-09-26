@@ -190,7 +190,7 @@ install(
 	FILES
 		"${DATA_DIR}/Source/Scripts/MagicTweaks_ModObjectsScript.psc"
 		"${DATA_DIR}/Source/Scripts/SEA_MagicTweaks.psc"
-	DESTINATION "Data/Source/Scripts"
+	DESTINATION "Source/Scripts"
 	COMPONENT components
 )
 
