@@ -80,6 +80,20 @@
       }
     },
     {
+      "name": "vs-windows-vcpkg-release-gog",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs",
+        "release"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GOG": true
+      }
+    },
+    {
       "name": "vs-windows-vcpkg-test",
       "inherits": [
         "cmake-dev",

@@ -63,30 +63,6 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
 	}();
 #endif
 
-SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
-{
-	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = Plugin::NAME.data();
-	a_info->version = Plugin::VERSION[0];
-
-	if (a_skse->IsEditor()) {
-		REX::CRITICAL("Loaded in editor, marking as incompatible"sv);
-		return false;
-	}
-
-	const auto ver = a_skse->RuntimeVersion();
-#ifdef SKYRIM_AE
-	if (ver < SKSE::RUNTIME_SSE_LATEST) {
-#else
-	if (ver < SKSE::RUNTIME_1_5_39) {
-#endif
-		REX::CRITICAL("Unsupported runtime version {}", ver.string());
-		return false;
-	}
-
-	return true;
-	}
-
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 {
 	constexpr std::size_t allocSize = 14u * 5u + 33u * 2u;
@@ -103,10 +79,41 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 	REX::INFO("Author: SeaSparrow"sv);
 	SECTION_SEPARATOR;
 
-#ifdef SKYRIM_AE
 	const auto ver = a_skse->RuntimeVersion();
-	if (ver < SKSE::RUNTIME_SSE_LATEST) {
-		return false;
+
+#ifdef SKYRIM_GOG
+	static constexpr std::array<REL::Version, 2> supported = 
+	{
+		SKSE::RUNTIME_SSE_1_6_1170,
+		SKSE::RUNTIME_SSE_1_6_1179
+	};
+
+	if (!std::ranges::contains(supported, ver)) {
+		REX::CRITICAL("Game Version: {}"sv, ver.string());
+		REX::CRITICAL("Supported Versions:"sv);
+		for (const auto& allowed : supported) {
+			REX::CRITICAL("  - {}"sv, allowed.string());
+		}
+		REX::FAIL(
+			fmt::format("You are using a version not supported by this plugin. Check the log at (Documents/My Games/Skyrim Special Edition/{}.log for more information."sv, Plugin::NAME)
+		);
+	}
+#else
+	static constexpr std::array<REL::Version, 2> supported = 
+	{
+		SKSE::RUNTIME_SSE_1_7_104,
+		SKSE::RUNTIME_SSE_1_7_99
+	};
+
+	if ((ver < SKSE::RUNTIME_SSE_LATEST) && (!std::ranges::contains(supported, ver))) {
+		REX::CRITICAL("Game Version: {}"sv, ver.string());
+		REX::CRITICAL("Supported Versions:"sv);
+		for (const auto& allowed : supported) {
+			REX::CRITICAL("  - {}"sv, allowed.string());
+		}
+		REX::FAIL(
+			fmt::format("You are using a version not supported by this plugin. Check the log at (Documents/My Games/Skyrim Special Edition/{}.log for more information."sv, Plugin::NAME)
+		);
 	}
 #endif
 
