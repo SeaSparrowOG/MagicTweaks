@@ -49,6 +49,14 @@
       }
     },
     {
+      "name": "release-gog",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build-gog",
+      "cacheVariables": {
+        "FULL_RELEASE": true
+      }
+    },
+    {
       "name": "test",
       "hidden": true,
       "binaryDir": "${sourceDir}/build-test"
@@ -73,10 +81,11 @@
         "vcpkg",
         "windows",
         "vs",
-        "release"
+        "release-gog"
       ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "SKIP_ARTIFACTS": true,
         "GOG": true
       }
     },
@@ -100,10 +109,11 @@
         "vcpkg",
         "windows",
         "vs",
-        "release"
+        "release-gog"
       ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "SKIP_ARTIFACTS": true,
         "GOG": true
       }
     },
@@ -130,6 +140,11 @@
     {
       "name": "Release",
       "configurePreset": "vs-windows-vcpkg-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "Release-GOG",
+      "configurePreset": "vs-windows-vcpkg-release-gog",
       "configuration": "Release"
     },
     {

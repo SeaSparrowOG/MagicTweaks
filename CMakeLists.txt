@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.24)
 
 option(FULL_RELEASE "Finalizes the build, compressing everything into a BSA." OFF)
 option(GOG "Targets 1.6 for GOG." OFF)
-option(BUILD_ARTIFACTS "Turned off during Github actions to get them to stop failing." OFF)
-option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." OFF)
-option(COPY_PEX "Copies any generated scripts to the MO2 directory (if specified). Applies after the BSA (if enabled)." OFF)
-option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). Applies after the BSA (if enabled)." OFF)
+option(BUILD_ARTIFACTS "Turned off during Github actions to get them to stop failing." ON)
+option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." ON)
+option(COPY_PEX "Copies any generated scripts to the MO2 directory (if specified). Applies after the BSA (if enabled)." ON)
+option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). Applies after the BSA (if enabled)." ON)
 
 # -------- Project ----------
 project(
@@ -40,6 +40,10 @@ if (GOG)
 	set(SKSE_COMMONLIBSSE_PATH, "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE_1.6")
 else()
 	set(SKSE_COMMONLIBSSE_PATH, "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
+endif()
+
+if (SKIP_ARTIFACTS)
+	set(BUILD_ARTIFACTS, OFF)
 endif()
 
 SKSEPlugin_Add(
@@ -164,3 +168,48 @@ if(DEFINED OUTPUT_FOLDER AND BUILD_ARTIFACTS)
 		)
     endif()
 endif()
+
+# ---- Github Release Stuff ----
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
+	DESTINATION "SKSE/Plugins"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/${PROJECT_NAME}.bsa"
+		"${DATA_DIR}/${PROJECT_NAME}.esl"
+	DESTINATION "."
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/Source/Scripts/MagicTweaks_ModObjectsScript.psc"
+		"${DATA_DIR}/Source/Scripts/SEA_MagicTweaks.psc"
+	DESTINATION "Data/Source/Scripts"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/CustomConsole/${PROJECT_NAME}.yaml"
+	DESTINATION "SKSE/CustomConsole"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/MagicTweaks/_defaultSettings.json"
+	DESTINATION "SKSE/Plugins/MagicTweaks"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/ActorValueData/MagicTweaks_AVG.toml"
+	DESTINATION "SKSE/Plugins/ActorValueData"
+	COMPONENT components
+)
