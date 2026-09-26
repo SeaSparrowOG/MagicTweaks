@@ -81,7 +81,7 @@
         "vcpkg",
         "windows",
         "vs",
-        "release-gog"
+        "release"
       ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
