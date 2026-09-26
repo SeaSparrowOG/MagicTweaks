@@ -16,6 +16,14 @@ jobs:
   build:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        include:
+          - preset: vs-windows-vcpkg-github
+            artifact: release
+          - preset: vs-windows-vcpkg-github-gog
+            artifact: gog
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -81,7 +89,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake --preset vs-windows-vcpkg-github -Wno-deprecated
+          cmake --preset ${{ matrix.preset }} -Wno-deprecated
 
       - name: Build
         run: |
@@ -95,5 +103,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ github.event.repository.name }}
+          name: ${{ github.event.repository.name }}-${{ matrix.artifact }}
           path: ${{ github.workspace }}/ReleaseBuild
