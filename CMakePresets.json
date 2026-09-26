@@ -67,7 +67,7 @@
       }
     },
     {
-      "name": "vs-windows-vcpkg-release-gog",
+      "name": "vs-windows-vcpkg-github-gog",
       "inherits": [
         "cmake-dev",
         "vcpkg",
