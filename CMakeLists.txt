@@ -44,7 +44,7 @@ endif()
 if (SKIP_ARTIFACTS)
 	set(BUILD_ARTIFACTS, OFF)
 else()
-	option(BUILD_ARTIFACTS "Turned off during Github actions to get them to stop failing." ON)
+	set(BUILD_ARTIFACTS, ON)
 endif()
 
 SKSEPlugin_Add(

@@ -394,7 +394,7 @@ namespace BoundEffectManager {
 		}
 	}
 
-	int BoundEffectManager::UnBindSpell(RE::MagicItem* a_spell) {
+	int BoundEffectManager::UnBindSpell(RE::SpellItem* a_spell) {
 		if (!a_spell || a_spell->effects.empty()) {
 			return -1;
 		}

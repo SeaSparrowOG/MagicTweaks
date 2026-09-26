@@ -16,7 +16,7 @@ namespace Papyrus
 		return manager->UnBindAllSpells();
 	}
 
-	static int UnBindSpell(STATIC_ARGS, RE::MagicItem* a_spell) {
+	static int UnBindSpell(STATIC_ARGS, RE::SpellItem* a_spell) {
 		LOG_DEBUG("===[PAPYRUS]===");
 		LOG_DEBUG("Called UnBindSpell");
 

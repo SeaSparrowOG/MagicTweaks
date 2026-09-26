@@ -22,7 +22,7 @@ namespace BoundEffectManager
 
 		void UpdateTimePassed(float a_delta);
 
-		int UnBindSpell(RE::MagicItem* a_spell);
+		int UnBindSpell(RE::SpellItem* a_spell);
 		bool UnBindAllSpells();
 
 		void GainExperience();
