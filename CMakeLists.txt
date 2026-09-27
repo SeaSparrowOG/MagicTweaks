@@ -1,15 +1,13 @@
 cmake_minimum_required(VERSION 3.24)
 
-option(FULL_RELEASE "Finalizes the build, compressing everything into a BSA." OFF)
-option(GOG "Targets 1.6 for GOG." OFF)
-option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." ON)
+option(COPY_BSA "Copies any generated BSA to the MO2 directory (if specified)." OFF)
 option(COPY_PEX "Copies any generated scripts to the MO2 directory (if specified). Applies after the BSA (if enabled)." ON)
 option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). Applies after the BSA (if enabled)." ON)
 
 # -------- Project ----------
 project(
 	MagicTweaks
-	VERSION 2.4.2
+	VERSION 2.4.3
 	LANGUAGES CXX
 )
 
@@ -28,23 +26,20 @@ list(APPEND CMAKE_MODULE_PATH
 list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}/tools/Bethesda-CMakeModules/Modules"
 )
+
 include(SKSEPlugin)
 set(SKSE_USE_XBYAK ON)
+find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
+
 add_compile_definitions(SKSE_SUPPORT_XBYAK)
 add_compile_definitions(SKYRIM_AE)
 add_compile_definitions(SKYRIM_SUPPORT_AE)
 
+set(SKSE_COMMONLIBSSE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
+
 if (GOG)
 	add_compile_definitions(SKYRIM_GOG)
-	set(SKSE_COMMONLIBSSE_PATH, "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE_1.6")
-else()
-	set(SKSE_COMMONLIBSSE_PATH, "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
-endif()
-
-if (SKIP_ARTIFACTS)
-	set(BUILD_ARTIFACTS, OFF)
-else()
-	set(BUILD_ARTIFACTS, ON)
+	set(SKSE_COMMONLIBSSE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE_1.6")
 endif()
 
 SKSEPlugin_Add(
@@ -70,6 +65,12 @@ set_target_properties(CommonLibSSE PROPERTIES
 	FOLDER External
 )
 
+target_include_directories(
+	${PROJECT_NAME}
+	PRIVATE
+		${CLIB_UTIL_INCLUDE_DIRS}
+)
+
 set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
 
 include(components.cmake)
@@ -89,7 +90,7 @@ endif()
 include(Papyrus)
 include(BSArchive)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts" AND BUILD_ARTIFACTS)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts" AND NOT SKIP_ARTIFACTS)
 	file(GLOB ${PROJECT_NAME}_SOURCES
 		LIST_DIRECTORIES false
 		CONFIGURE_DEPENDS
@@ -115,7 +116,7 @@ else()
 endif()
 
 # ---- Automatically copy artifacts to MO2 ----
-if(DEFINED OUTPUT_FOLDER AND BUILD_ARTIFACTS)
+if(DEFINED OUTPUT_FOLDER AND NOT SKIP_ARTIFACTS)
     set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
 
     add_custom_command(
