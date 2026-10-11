@@ -36,6 +36,7 @@ add_compile_definitions(SKYRIM_AE)
 add_compile_definitions(SKYRIM_SUPPORT_AE)
 
 set(SKSE_COMMONLIBSSE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
+set(SKSE_NO_INSTALL ON)
 
 if (GOG)
 	add_compile_definitions(SKYRIM_GOG)
@@ -209,6 +210,15 @@ endif()
 # ---- Github Release Stuff ----
 
 # ---- FOMOD Setup - Core ----
+install(
+	FILES
+		"$<TARGET_FILE:${PROJECT_NAME}>"
+		"$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
+	DESTINATION "01. Core/SKSE/Plugins"
+	COMPONENT components
+)
+
 install(
 	FILES 
 		"${DATA_DIR}/${PROJECT_NAME}.bsa"
