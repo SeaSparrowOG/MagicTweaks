@@ -7,7 +7,7 @@ option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). 
 # -------- Project ----------
 project(
 	MagicTweaks
-	VERSION 2.4.3
+	VERSION 2.4.4
 	LANGUAGES CXX
 )
 
@@ -172,46 +172,99 @@ if(DEFINED OUTPUT_FOLDER AND NOT SKIP_ARTIFACTS)
 endif()
 
 # ---- Github Release Stuff ----
-install(
-	FILES
-		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
-	DESTINATION "SKSE/Plugins"
-	COMPONENT components
-)
 
+# ---- FOMOD Setup - Core ----
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/${PROJECT_NAME}.bsa"
 		"${DATA_DIR}/${PROJECT_NAME}.esl"
-	DESTINATION "."
+	DESTINATION "01. Core"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/Source/Scripts/MagicTweaks_ModObjectsScript.psc"
 		"${DATA_DIR}/Source/Scripts/SEA_MagicTweaks.psc"
-	DESTINATION "Source/Scripts"
+	DESTINATION "01. Core/Source/Scripts"
 	COMPONENT components
 )
 
 install(
-	FILES
-		"${DATA_DIR}/SKSE/CustomConsole/${PROJECT_NAME}.yaml"
-	DESTINATION "SKSE/CustomConsole"
+	FILES 
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
+	DESTINATION "01. Core/SKSE/Plugins"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/SKSE/Plugins/MagicTweaks/_defaultSettings.json"
-	DESTINATION "SKSE/Plugins/MagicTweaks"
+	DESTINATION "01. Core/SKSE/Plugins/MagicTweaks"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/SKSE/Plugins/ActorValueData/MagicTweaks_AVG.toml"
-	DESTINATION "SKSE/Plugins/ActorValueData"
+	DESTINATION "01. Core/SKSE/Plugins/ActorValueData"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/SKSE/CustomConsole/${PROJECT_NAME}.yaml"
+	DESTINATION "01. Core/SKSE/CustomConsole"
+	COMPONENT components
+)
+
+# ---- FOMOD Setup - Tweak Costs ----
+install(
+	FILES 
+		"${DATA_DIR}/MagicTweaks_SkillRatioOverhaul.esp"
+	DESTINATION "02. Tweak Costs"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/AltInis/TweakCosts/${PROJECT_NAME}.ini"
+	DESTINATION "02. Tweak Costs/SKSE/Plugins"
+	COMPONENT components
+)
+
+# ---- FOMOD Setup - Addons ----
+
+install(
+	FILES 
+		"${DATA_DIR}/VanillaBoundSpells.esp"
+	DESTINATION "03. Addons/01. Bound Spells"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/MagicTweaks_MagickaShield.esp"
+	DESTINATION "03. Addons/02. Magicka Shielding"
+	COMPONENT components
+)
+
+# ---- FOMOD - Configuration ----
+
+install(
+	FILES 
+		"${DATA_DIR}/FOMOD/info.xml"
+		"${DATA_DIR}/FOMOD/ModuleConfig.xml"
+	DESTINATION "FOMOD"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/FOMOD/Images/MagickaShield.jpg"
+		"${DATA_DIR}/FOMOD/Images/MagicTweaks.jpg"
+		"${DATA_DIR}/FOMOD/Images/SkillCostsRedone.jpg"
+		"${DATA_DIR}/FOMOD/Images/SpellBinding.jpg"
+	DESTINATION "FOMOD/Images"
 	COMPONENT components
 )
