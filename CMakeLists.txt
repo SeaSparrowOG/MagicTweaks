@@ -7,7 +7,7 @@ option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). 
 # -------- Project ----------
 project(
 	MagicTweaks
-	VERSION 2.4.3
+	VERSION 2.4.4
 	LANGUAGES CXX
 )
 
@@ -36,6 +36,7 @@ add_compile_definitions(SKYRIM_AE)
 add_compile_definitions(SKYRIM_SUPPORT_AE)
 
 set(SKSE_COMMONLIBSSE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
+set(SKSE_NO_INSTALL ON)
 
 if (GOG)
 	add_compile_definitions(SKYRIM_GOG)
@@ -71,6 +72,36 @@ target_include_directories(
 		${CLIB_UTIL_INCLUDE_DIRS}
 )
 
+if (MSVC)
+	target_compile_options(
+		${PROJECT_NAME}
+		PRIVATE
+			/sdl                    # Enable Additional Security Checks
+			/utf-8                  # Set Source and Executable character sets to UTF-8
+			/Zi                     # Debug Information Format
+
+			/permissive-            # Standards conformance
+			/Zc:preprocessor        # Enable preprocessor conformance mode
+			/Zc:__cplusplus
+			
+			/wd4200                 # nonstandard extension used : zero-sized array in struct/union
+			/W4                     # More warnings 
+			/WX                     # Treat all warnings as errors
+			/external:anglebrackets # Ignore warnings for external resources.
+			/external:W0            # Same as above
+			
+			"$<$<CONFIG:DEBUG>:>"
+			"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+	)
+
+	target_link_options(
+		${PROJECT_NAME}
+		PRIVATE
+			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
+			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+	)
+endif ()
+
 set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
 
 include(components.cmake)
@@ -90,7 +121,12 @@ endif()
 include(Papyrus)
 include(BSArchive)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts" AND NOT SKIP_ARTIFACTS)
+if(
+	NOT SKIP_ARTIFACTS
+	AND Skyrim64Path
+	AND IS_DIRECTORY "${Skyrim64Path}/tools"
+	AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts"
+)
 	file(GLOB ${PROJECT_NAME}_SOURCES
 		LIST_DIRECTORIES false
 		CONFIGURE_DEPENDS
@@ -172,46 +208,108 @@ if(DEFINED OUTPUT_FOLDER AND NOT SKIP_ARTIFACTS)
 endif()
 
 # ---- Github Release Stuff ----
+
+# ---- FOMOD Setup - Core ----
 install(
 	FILES
+		"$<TARGET_FILE:${PROJECT_NAME}>"
+		"$<TARGET_PDB_FILE:${PROJECT_NAME}>"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
-	DESTINATION "SKSE/Plugins"
+	DESTINATION "01. Core/SKSE/Plugins"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/${PROJECT_NAME}.bsa"
 		"${DATA_DIR}/${PROJECT_NAME}.esl"
-	DESTINATION "."
+	DESTINATION "01. Core"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/Source/Scripts/MagicTweaks_ModObjectsScript.psc"
 		"${DATA_DIR}/Source/Scripts/SEA_MagicTweaks.psc"
-	DESTINATION "Source/Scripts"
+	DESTINATION "01. Core/Source/Scripts"
 	COMPONENT components
 )
 
 install(
-	FILES
-		"${DATA_DIR}/SKSE/CustomConsole/${PROJECT_NAME}.yaml"
-	DESTINATION "SKSE/CustomConsole"
+	FILES 
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
+	DESTINATION "01. Core/SKSE/Plugins"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/SKSE/Plugins/MagicTweaks/_defaultSettings.json"
-	DESTINATION "SKSE/Plugins/MagicTweaks"
+	DESTINATION "01. Core/SKSE/Plugins/MagicTweaks"
 	COMPONENT components
 )
 
 install(
-	FILES
+	FILES 
 		"${DATA_DIR}/SKSE/Plugins/ActorValueData/MagicTweaks_AVG.toml"
-	DESTINATION "SKSE/Plugins/ActorValueData"
+	DESTINATION "01. Core/SKSE/Plugins/ActorValueData"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/SKSE/CustomConsole/${PROJECT_NAME}.yaml"
+	DESTINATION "01. Core/SKSE/CustomConsole"
+	COMPONENT components
+)
+
+# ---- FOMOD Setup - Tweak Costs ----
+install(
+	FILES 
+		"${DATA_DIR}/MagicTweaks_SkillRatioOverhaul.esp"
+	DESTINATION "02. Tweak Costs"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/AltInis/TweakCosts/${PROJECT_NAME}.ini"
+	DESTINATION "02. Tweak Costs/SKSE/Plugins"
+	COMPONENT components
+)
+
+# ---- FOMOD Setup - Addons ----
+
+install(
+	FILES 
+		"${DATA_DIR}/VanillaBoundSpells.esp"
+	DESTINATION "03. Addons/01. Bound Spells"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/MagicTweaks_MagickaShield.esp"
+	DESTINATION "03. Addons/02. Magicka Shielding"
+	COMPONENT components
+)
+
+# ---- FOMOD - Configuration ----
+
+install(
+	FILES 
+		"${DATA_DIR}/FOMOD/info.xml"
+		"${DATA_DIR}/FOMOD/ModuleConfig.xml"
+	DESTINATION "FOMOD"
+	COMPONENT components
+)
+
+install(
+	FILES 
+		"${DATA_DIR}/FOMOD/Images/MagickaShield.jpg"
+		"${DATA_DIR}/FOMOD/Images/MagicTweaks.jpg"
+		"${DATA_DIR}/FOMOD/Images/SkillCostsRedone.jpg"
+		"${DATA_DIR}/FOMOD/Images/SpellBinding.jpg"
+	DESTINATION "FOMOD/Images"
 	COMPONENT components
 )

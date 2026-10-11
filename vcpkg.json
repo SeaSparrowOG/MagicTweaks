@@ -1,8 +1,8 @@
 {
-  "name": "currency-swapper",
-  "version-string": "2.4.2",
-  "description": "Allows for the manipulation of the game's default currency through scripts.",
-  "homepage": "https://github.com/SeaSparrowOG/CurrencySwapper",
+  "name": "magic-tweaks",
+  "version-string": "2.4.4",
+  "description": "Skyrim mod that fixes several annoyances with the game's Magic systems and tweaks some aspects to my preferences.",
+  "homepage": "https://github.com/SeaSparrowOG/MagicTweaks",
   "license": "GPL-3.0-or-later",
   "dependencies": [
     "boost-stl-interfaces",
