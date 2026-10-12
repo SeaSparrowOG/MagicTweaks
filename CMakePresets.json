@@ -53,8 +53,8 @@
    "hidden": false,
    "binaryDir": "${sourceDir}/build",
    "inherits": [
-    "gog",
     "base",
+    "gog",
     "github"
    ]
   },
