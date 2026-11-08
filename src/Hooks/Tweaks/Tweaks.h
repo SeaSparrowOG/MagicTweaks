@@ -14,6 +14,23 @@ namespace Hooks::Tweaks {
 		inline static REL::Relocation<decltype(SetCastTimer)> _setCastTimer;
 	};
 
+	struct EnforceCastLimits
+	{
+		inline static bool PatchCheckCast();
+
+		inline static bool CheckCast(RE::ActorMagicCaster* a_this, 
+			RE::MagicItem* a_spell,
+			bool a_dualCast, 
+			float* a_effectStrength,
+			RE::MagicSystem::CannotCastReason* a_reason,
+			bool a_useBaseValueForCost);
+
+		inline static const char* GetCannotCastString(RE::MagicSystem::CannotCastReason a_reason);
+		
+		inline static REL::Relocation<decltype(CheckCast)> _checkCast;
+		inline static REL::Relocation<decltype(GetCannotCastString)> _getCannotCastString;
+	};
+
 	struct ModifySpellReduction
 	{
 		inline static bool PatchSpellReduction();

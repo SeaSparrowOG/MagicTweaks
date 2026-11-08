@@ -22,4 +22,8 @@ namespace RE::Offset
 	{
 		constexpr auto CalculateCost = REL::ID(11321);
 	}
+	namespace MagicSystem
+	{
+		constexpr auto GetCannotCastReasonString = REL::ID(11423);
+	}
 }

@@ -16,6 +16,7 @@ namespace Hooks::Tweaks
 		g_extendInDialogue = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE).value_or(false);
 		bool installSheatheTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DISPEL).value_or(false);
 		bool installCastingSpeedTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_CASTING_SPEED).value_or(false);
+		bool installCastRequirementsTweak = Settings::INI::GetSetting<long>(Settings::INI::TWEAK_MAX_SKILL_DIFFERENCE).value_or(0) > 0;
 
 		if (installReductionTweak) {
 			success &= ModifySpellReduction::PatchSpellReduction();
@@ -30,6 +31,9 @@ namespace Hooks::Tweaks
 		}
 		if (installCastingSpeedTweak) {
 			success &= CastSpeedTweaks::PatchSpeed();
+		}
+		if (installCastRequirementsTweak) {
+			success &= EnforceCastLimits::PatchCheckCast();
 		}
 
 		success &= ArchetypePatch<RE::CloakEffect>::Patch();
@@ -406,4 +410,92 @@ namespace Hooks::Tweaks
 		const float penalty = static_cast<float>(difference) * clampedPenalty;
 		a_this->castingTimer *= penalty;
 	}
+
+    inline bool EnforceCastLimits::PatchCheckCast() {
+		REL::Relocation<std::uintptr_t> VTABLE{ RE::ActorMagicCaster::VTABLE[0] };
+		_checkCast = VTABLE.write_vfunc(0xA, CheckCast);
+
+		// Credits - Nukem
+		struct Patch : Xbyak::CodeGenerator
+		{
+			explicit Patch(uintptr_t OriginalFuncAddr, size_t OriginalByteLength)
+			{
+				for (size_t i = 0; i < OriginalByteLength; i++)
+					db(*reinterpret_cast<uint8_t*>(OriginalFuncAddr + i));
+
+				jmp(qword[rip]);
+				dq(OriginalFuncAddr + OriginalByteLength);
+			}
+		};
+
+		auto& trampoline = REL::GetTrampoline();
+		const REL::Relocation<std::uintptr_t> target{ RE::Offset::MagicSystem::GetCannotCastReasonString };
+
+		Patch p(target.address(), 6);
+		p.ready();
+
+		trampoline.write_jmp<6>(target.address(), GetCannotCastString);
+
+		auto alloc = trampoline.allocate(p.getSize());
+		memcpy(alloc, p.getCode(), p.getSize());
+
+		_getCannotCastString = reinterpret_cast<uintptr_t>(alloc);
+        return true;
+    }
+
+    inline bool EnforceCastLimits::CheckCast(RE::ActorMagicCaster *a_this, 
+		RE::MagicItem* a_spell,
+		bool a_dualCast, 
+		float *a_effectStrength, 
+		RE::MagicSystem::CannotCastReason *a_reason, 
+		bool a_useBaseValueForCost)
+    {
+		const bool canCast = _checkCast(a_this, a_spell, a_dualCast, a_effectStrength, a_reason, a_useBaseValueForCost);
+		if (!canCast) {
+			return canCast;
+		}
+		
+		static const long limitRaw = Settings::INI::GetSetting<long>(Settings::INI::TWEAK_MAX_SKILL_DIFFERENCE).value_or(0);
+		static const uint8_t limit = limitRaw <= 0 ? 
+			0u : 
+			limitRaw < std::numeric_limits<uint8_t>::max() ? 
+				static_cast<uint8_t>(limitRaw) : 
+				std::numeric_limits<uint8_t>::max();
+
+		const auto* actor = a_this ? a_this->GetCasterAsActor() : nullptr;
+		const auto* spell = a_spell ? a_spell->As<RE::SpellItem>() : nullptr;
+		if (!actor || !spell) {
+			return canCast;
+		}
+
+		const auto school = spell->GetAssociatedSkill();
+		switch (school) {
+			case RE::ActorValue::kIllusion:
+			case RE::ActorValue::kConjuration:
+			case RE::ActorValue::kDestruction:
+			case RE::ActorValue::kRestoration:
+			case RE::ActorValue::kAlteration:
+				break;
+			default:
+				return canCast;
+		}
+
+		const auto spellLevel = get_spell_milestone(spell->data.castingPerk);
+		const auto casterSkill = std::clamp(actor->GetActorValue(school), 0.0f, 100.0f);
+		const auto difference = get_milestone_gap(spellLevel, casterSkill);
+		if (difference > limit) {
+			*a_reason = static_cast<RE::MagicSystem::CannotCastReason>(101);
+			return false;
+		}
+        return canCast;
+    }
+
+    inline const char *EnforceCastLimits::GetCannotCastString(RE::MagicSystem::CannotCastReason a_reason) {
+		const auto underlying = std::to_underlying(a_reason);
+		const auto* normalReason = _getCannotCastString(a_reason);
+		if (underlying == 101) {
+			return "This spell is too advanced for you.";
+		}
+		return normalReason;
+    }
 }
