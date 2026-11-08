@@ -7,6 +7,13 @@ namespace Hooks::Tweaks {
 
 	bool InstallTweaks();
 
+	struct CastSpeedTweaks
+	{
+		inline static bool PatchSpeed();
+		inline static void SetCastTimer(RE::MagicCaster* a_this);
+		inline static REL::Relocation<decltype(SetCastTimer)> _setCastTimer;
+	};
+
 	struct ModifySpellReduction
 	{
 		inline static bool PatchSpellReduction();
