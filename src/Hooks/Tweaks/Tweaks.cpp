@@ -446,8 +446,8 @@ namespace Hooks::Tweaks
     inline bool EnforceCastLimits::CheckCast(RE::ActorMagicCaster *a_this, 
 		RE::MagicItem* a_spell,
 		bool a_dualCast, 
-		float *a_effectStrength, 
-		RE::MagicSystem::CannotCastReason *a_reason, 
+		float* a_effectStrength, 
+		RE::MagicSystem::CannotCastReason* a_reason, 
 		bool a_useBaseValueForCost)
     {
 		const bool canCast = _checkCast(a_this, a_spell, a_dualCast, a_effectStrength, a_reason, a_useBaseValueForCost);
@@ -490,7 +490,7 @@ namespace Hooks::Tweaks
         return canCast;
     }
 
-    inline const char *EnforceCastLimits::GetCannotCastString(RE::MagicSystem::CannotCastReason a_reason) {
+    inline const char* EnforceCastLimits::GetCannotCastString(RE::MagicSystem::CannotCastReason a_reason) {
 		const auto underlying = std::to_underlying(a_reason);
 		const auto* normalReason = _getCannotCastString(a_reason);
 		if (underlying == 101) {
