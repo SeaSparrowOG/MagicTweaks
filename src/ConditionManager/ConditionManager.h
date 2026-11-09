@@ -9,7 +9,8 @@ namespace ConditionManager
 	public:
 		bool Initialize();
 
-		bool SubstituteItemCount(RE::TESBoundObject* a_obj, RE::TESObjectREFR* a_ref, int32_t& a_out);
+		[[nodiscard]]
+		std::optional<int32_t> SubstituteItemCount(RE::TESBoundObject* a_obj, RE::TESObjectREFR* a_ref);
 	
 	private:
 		RE::TESBoundObject* totalCount{ nullptr };

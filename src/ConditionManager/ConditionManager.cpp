@@ -58,81 +58,78 @@ namespace ConditionManager
 		return true;
 	}
 
-	bool ConditionManager::SubstituteItemCount(RE::TESBoundObject* a_obj,
-		RE::TESObjectREFR* a_ref,
-		int32_t& a_out)
+	template <class Predicate>
+	[[nodiscard]]
+	static int32_t get_matching_minions(
+		const RE::BSTArray<RE::CommandedActorData>& minions,
+		Predicate&& predicate)
 	{
-		auto* asActor = a_ref ? a_ref->As<RE::Actor>() : nullptr;
-		auto* asMiddleHigh = asActor ? asActor->GetMiddleHighProcess() : nullptr;
-		if (!asMiddleHigh || !a_obj) {
-			return false;
+		return static_cast<int32_t>(std::ranges::count_if(minions, std::forward<Predicate>(predicate)));
+	}
+
+	std::optional<int32_t> ConditionManager::SubstituteItemCount(
+		RE::TESBoundObject* a_obj,
+		RE::TESObjectREFR* a_ref)
+	{
+		auto* actor = a_ref ? a_ref->As<RE::Actor>() : nullptr;
+		auto* process = actor ? actor->GetMiddleHighProcess() : nullptr;
+		if (!process || !a_obj) {
+			return std::nullopt;
 		}
 
-		auto& commandedActors = asMiddleHigh->commandedActors;
-		if (commandedActors.empty()) {
-			return false;
-		}
+		const auto& minions = process->commandedActors;
+
+		const auto get_actor = [](const auto& a_data) {
+			return a_data.commandedActor ? a_data.commandedActor.get().get() : nullptr;
+		};
+
+		const auto is_summoned = [&](const auto& a_data) {
+			const auto* actor = get_actor(a_data);
+			return actor && actor->IsSummoned();
+		};
+
+		const auto is_reanimated = [&](const auto& a_data) {
+			const auto* actor = get_actor(a_data);
+			return actor && actor->IsReanimated();
+		};
+		
+		const auto has_resistance = [&](const auto& a_data, RE::ActorValue a_value) {
+			const auto* actor = get_actor(a_data);
+			if (!actor || !actor->IsSummoned() || actor->IsReanimated()) {
+				return false;
+			}
+
+			const auto* avOwner = actor->As<RE::ActorValueOwner>();
+			return avOwner && avOwner->GetBaseActorValue(a_value) >= 100.0f;
+		};
 
 		if (conjuredCount == a_obj) {
-			for (const auto actorData : commandedActors) {
-				auto* actor = actorData.commandedActor ? actorData.commandedActor.get().get() : nullptr;
-				if (!actor) {
-					continue;
-				}
-				a_out += actor->IsSummoned() ? 1 : 0;
-			}
+			return get_matching_minions(minions, is_summoned);
 		}
-		else if (totalCount == a_obj) {
-			for (const auto actorData : commandedActors) {
-				auto* actor = actorData.commandedActor ? actorData.commandedActor.get().get() : nullptr;
-				if (!actor) {
-					continue;
-				}
-				a_out += actor->IsSummoned() || actor->IsReanimated() ? 1 : 0;
-			}
+		if (totalCount == a_obj) {
+			return get_matching_minions(minions, [](const auto& a_data) {
+				return static_cast<bool>(a_data.commandedActor);
+			});
 		}
-		else if (fireCount == a_obj) {
-			for (const auto actorData : commandedActors) {
-				auto* actor = actorData.commandedActor ? actorData.commandedActor.get().get() : nullptr;
-				auto* avOwner = actor ? actor->As<RE::ActorValueOwner>() : nullptr;
-				if (!avOwner || !(actor->IsSummoned() || actor->IsReanimated())) {
-					continue;
-				}
-				a_out += avOwner->GetActorValue(RE::ActorValue::kResistFire) >= 100.0f ? 1 : 0;
-			}
+		if (fireCount == a_obj) {
+			return get_matching_minions(minions, [&](const auto& a_data) {
+				return has_resistance(a_data, RE::ActorValue::kResistFire);
+			});
 		}
-		else if (frostCount == a_obj) {
-			for (const auto actorData : commandedActors) {
-				auto* actor = actorData.commandedActor ? actorData.commandedActor.get().get() : nullptr;
-				auto* avOwner = actor ? actor->As<RE::ActorValueOwner>() : nullptr;
-				if (!avOwner || !(actor->IsSummoned() || actor->IsReanimated())) {
-					continue;
-				}
-				a_out += avOwner->GetActorValue(RE::ActorValue::kResistFrost) >= 100.0f ? 1 : 0;
-			}
+		if (frostCount == a_obj) {
+			return get_matching_minions(minions, [&](const auto& a_data) {
+				return has_resistance(a_data, RE::ActorValue::kResistFrost);
+			});
 		}
-		else if (shockCount == a_obj) {
-			for (const auto actorData : commandedActors) {
-				auto* actor = actorData.commandedActor ? actorData.commandedActor.get().get() : nullptr;
-				auto* avOwner = actor ? actor->As<RE::ActorValueOwner>() : nullptr;
-				if (!avOwner || !(actor->IsSummoned() || actor->IsReanimated())) {
-					continue;
-				}
-				a_out += avOwner->GetActorValue(RE::ActorValue::kResistShock) >= 100.0f ? 1 : 0;
-			}
+		if (shockCount == a_obj) {
+			return get_matching_minions(minions, [&](const auto& a_data) {
+				return has_resistance(a_data, RE::ActorValue::kResistShock);
+			});
 		}
-		else if (reanimatedCount == a_obj) {
-			for (const auto actorData : commandedActors) {
-				auto* actor = actorData.commandedActor ? actorData.commandedActor.get().get() : nullptr;
-				if (!actor) {
-					continue;
-				}
-				a_out += actor->IsReanimated() ? 1 : 0;
-			}
+		if (reanimatedCount == a_obj) {
+			return get_matching_minions(minions, is_reanimated);
 		}
-		else {
-			return false;
-		}
-		return true;
+
+		return std::nullopt;
 	}
 }
