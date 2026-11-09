@@ -65,7 +65,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
 
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 {
-	constexpr std::size_t allocSize = 1000u; //14u * 5u + 33u * 2u;
+	constexpr std::size_t allocSize = 150u;
 	SKSE::InitInfo info;
 	info.hook = true;
 	info.log = true;
