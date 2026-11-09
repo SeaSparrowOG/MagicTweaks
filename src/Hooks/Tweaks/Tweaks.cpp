@@ -15,6 +15,8 @@ namespace Hooks::Tweaks
 		bool installReductionTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_REDUCTION).value_or(false);
 		g_extendInDialogue = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DIALOGUE).value_or(false);
 		bool installSheatheTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DISPEL).value_or(false);
+		bool installCastingSpeedTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_CASTING_SPEED).value_or(false);
+		bool installCastRequirementsTweak = Settings::INI::GetSetting<long>(Settings::INI::TWEAK_MAX_SKILL_DIFFERENCE).value_or(0) > 0;
 
 		if (installReductionTweak) {
 			success &= ModifySpellReduction::PatchSpellReduction();
@@ -26,6 +28,12 @@ namespace Hooks::Tweaks
 				return false;
 			}
 			success &= dispeler->Install();
+		}
+		if (installCastingSpeedTweak) {
+			success &= CastSpeedTweaks::PatchSpeed();
+		}
+		if (installCastRequirementsTweak) {
+			success &= EnforceCastLimits::PatchCheckCast();
 		}
 
 		success &= ArchetypePatch<RE::CloakEffect>::Patch();
@@ -251,4 +259,256 @@ namespace Hooks::Tweaks
 			}
 		}
 	}
+
+    inline bool CastSpeedTweaks::PatchSpeed() {
+		REX::INFO("  >Installing Casting speed tweaks..."sv);
+		REL::Relocation<std::uintptr_t> target{ RE::Offset::MagicCaster::ChargeSpell, 0x4B };
+		if (!REL::Pattern<"E9">().match(target.address())) {
+			REX::CRITICAL("    >Failed to match expected pattern for Casting Speed."sv);
+			return false;
+		}
+		auto& trampoline = REL::GetTrampoline();
+		_setCastTimer = trampoline.write_jmp<5>(target.address(), SetCastTimer);
+        return true;
+    }
+
+	enum class Milestone : uint8_t {
+		Talentless = 0u,
+		Novice = 15u,
+		Apprentice = 25u,
+		Adept = 50u,
+		Expert = 75u,
+		Master = 90u
+	};
+
+	static Milestone get_level_milestone(uint8_t level) noexcept {
+		if (level < std::to_underlying(Milestone::Novice)) {
+			return Milestone::Talentless;
+		}
+		else if (level < std::to_underlying(Milestone::Apprentice)) {
+			return Milestone::Novice;
+		}
+		else if (level < std::to_underlying(Milestone::Adept)) {
+			return Milestone::Apprentice;
+		}
+		else if (level < std::to_underlying(Milestone::Expert)) {
+			return Milestone::Adept;
+		}
+		else if (level < std::to_underlying(Milestone::Master)) {
+			return Milestone::Expert;
+		}
+		return Milestone::Master;
+	}
+
+	static constexpr uint8_t get_milestone_tier(Milestone milestone) noexcept {
+		switch (milestone) {
+			case Milestone::Talentless: return 0u;
+			case Milestone::Novice: return 1u;
+			case Milestone::Apprentice: return 2u;
+			case Milestone::Adept: return 3u;
+			case Milestone::Expert: return 4u;
+			case Milestone::Master: return 5u;
+			default: std::unreachable();
+		}
+	}
+
+	static uint8_t get_milestone_gap(Milestone milestone, float skillLevel) {
+		const uint8_t floored = skillLevel < 0.0f ? 0u : static_cast<uint8_t>(std::floor(skillLevel));
+		const Milestone casterTalent = get_level_milestone(floored);
+		if (casterTalent >= milestone) {
+			return 0u;
+		}
+
+		return get_milestone_tier(milestone) - get_milestone_tier(casterTalent);
+	}
+
+	static Milestone get_spell_milestone(const RE::BGSPerk* perk) {
+		constexpr std::array<std::pair<RE::FormID, Milestone>, 25> perkMappings = {{
+			{0xF2CA6, Milestone::Novice},
+			{0xF2CA7, Milestone::Novice},
+			{0xF2CA8, Milestone::Novice},
+			{0xF2CA9, Milestone::Novice},
+			{0xF2CAA, Milestone::Novice},
+
+			{0xC44B7, Milestone::Apprentice},
+			{0xC44BB, Milestone::Apprentice},
+			{0xC44BF, Milestone::Apprentice},
+			{0xC44C3, Milestone::Apprentice},
+			{0xC44C7, Milestone::Apprentice},
+
+			{0xC44B8, Milestone::Adept},
+			{0xC44BC, Milestone::Adept},
+			{0xC44C0, Milestone::Adept},
+			{0xC44C4, Milestone::Adept},
+			{0xC44C8, Milestone::Adept},
+
+			{0xC44B9, Milestone::Expert},
+			{0xC44BD, Milestone::Expert},
+			{0xC44C1, Milestone::Expert},
+			{0xC44C5, Milestone::Expert},
+			{0xC44C9, Milestone::Expert},
+
+			{0xC44BA, Milestone::Master},
+			{0xC44BE, Milestone::Master},
+			{0xC44C2, Milestone::Master},
+			{0xC44C6, Milestone::Master},
+			{0xC44CA, Milestone::Master}
+		}};
+		
+		if (!perk) {
+			return Milestone::Talentless;
+		}
+
+		const auto halfPerkID = perk->GetFormID();
+		for (const auto& [id, milestone] : perkMappings) {
+			if (halfPerkID == id) {
+				return milestone;
+			}
+		}
+		return Milestone::Talentless;
+	}
+
+	inline void CastSpeedTweaks::SetCastTimer(RE::MagicCaster *a_this) {
+		static const float settingsPenalty = Settings::INI::GetSetting<float>(
+			Settings::INI::TWEAK_CASTING_SPEED_PERCENT)
+			.value_or(50.0f) / 100.0f;
+
+		static const float clampedPenalty = std::clamp(settingsPenalty, 0.1f, 10.0f) + 1.0f;
+
+		_setCastTimer(a_this);
+		const auto* actor = a_this ? a_this->GetCasterAsActor() : nullptr;
+		if (!actor) { 
+			return;
+		}
+
+		const auto* magicItem = a_this->currentSpell;
+		const auto* spell = magicItem ? magicItem->As<RE::SpellItem>() : nullptr;
+		const auto* halfPerk = spell ? spell->data.castingPerk : nullptr;
+		if (!halfPerk) {
+			return;
+		}
+		
+		const auto school = spell->GetAssociatedSkill();
+		switch (school) {
+			case RE::ActorValue::kIllusion:
+			case RE::ActorValue::kConjuration:
+			case RE::ActorValue::kDestruction:
+			case RE::ActorValue::kRestoration:
+			case RE::ActorValue::kAlteration:
+				break;
+			default:
+				return;
+		}
+
+		const auto spellLevel = get_spell_milestone(halfPerk);
+		const auto casterSkill = std::clamp(actor->GetActorValue(school), 0.0f, 100.0f);
+		const auto difference = get_milestone_gap(spellLevel, casterSkill);
+		if (difference == 0u) {
+			return;
+		}
+
+		const float penalty = static_cast<float>(difference) * clampedPenalty;
+		a_this->castingTimer *= penalty;
+	}
+
+    inline bool EnforceCastLimits::PatchCheckCast() {
+		REL::Relocation<std::uintptr_t> VTABLE{ RE::ActorMagicCaster::VTABLE[0] };
+		_checkCast = VTABLE.write_vfunc(0xA, CheckCast);
+
+		// Credits - Nukem
+		struct Patch : Xbyak::CodeGenerator
+		{
+			explicit Patch(uintptr_t OriginalFuncAddr, size_t OriginalByteLength)
+			{
+				for (size_t i = 0; i < OriginalByteLength; i++)
+					db(*reinterpret_cast<uint8_t*>(OriginalFuncAddr + i));
+
+				jmp(qword[rip]);
+				dq(OriginalFuncAddr + OriginalByteLength);
+			}
+		};
+
+		auto& trampoline = REL::GetTrampoline();
+		const REL::Relocation<std::uintptr_t> target{ RE::Offset::MagicSystem::GetCannotCastReasonString };
+
+		Patch p(target.address(), 6);
+		p.ready();
+
+		trampoline.write_jmp<6>(target.address(), GetCannotCastString);
+
+		auto alloc = trampoline.allocate(p.getSize());
+		memcpy(alloc, p.getCode(), p.getSize());
+
+		_getCannotCastString = reinterpret_cast<uintptr_t>(alloc);
+        return true;
+    }
+
+    inline bool EnforceCastLimits::CheckCast(RE::ActorMagicCaster *a_this, 
+		RE::MagicItem* a_spell,
+		bool a_dualCast, 
+		float* a_effectStrength, 
+		RE::MagicSystem::CannotCastReason* a_reason, 
+		bool a_useBaseValueForCost)
+    {
+		const bool canCast = _checkCast(a_this, a_spell, a_dualCast, a_effectStrength, a_reason, a_useBaseValueForCost);
+		if (!canCast) {
+			return canCast;
+		}
+		
+		static const long limitRaw = Settings::INI::GetSetting<long>(Settings::INI::TWEAK_MAX_SKILL_DIFFERENCE).value_or(0);
+		static const uint8_t limit = limitRaw <= 0 ? 
+			0u : 
+			limitRaw < std::numeric_limits<uint8_t>::max() ? 
+				static_cast<uint8_t>(limitRaw) : 
+				std::numeric_limits<uint8_t>::max();
+
+		const auto* actor = a_this ? a_this->GetCasterAsActor() : nullptr;
+		const auto* spell = a_spell ? a_spell->As<RE::SpellItem>() : nullptr;
+		if (!actor || !spell || !actor->IsPlayerRef()) {
+			return canCast;
+		}
+
+		const auto castingSource = a_this->castingSource;
+		switch (castingSource) {
+			case RE::MagicSystem::CastingSource::kLeftHand:
+			case RE::MagicSystem::CastingSource::kRightHand:
+				break;
+			default:
+				return canCast;
+		}
+
+		if (spell->GetSpellType() != RE::MagicSystem::SpellType::kSpell) {
+			return canCast;
+		}
+
+		const auto school = spell->GetAssociatedSkill();
+		switch (school) {
+			case RE::ActorValue::kIllusion:
+			case RE::ActorValue::kConjuration:
+			case RE::ActorValue::kDestruction:
+			case RE::ActorValue::kRestoration:
+			case RE::ActorValue::kAlteration:
+				break;
+			default:
+				return canCast;
+		}
+
+		const auto spellLevel = get_spell_milestone(spell->data.castingPerk);
+		const auto casterSkill = std::clamp(actor->GetActorValue(school), 0.0f, 100.0f);
+		const auto difference = get_milestone_gap(spellLevel, casterSkill);
+		if (difference > limit) {
+			*a_reason = static_cast<RE::MagicSystem::CannotCastReason>(101);
+			return false;
+		}
+        return canCast;
+    }
+
+    inline const char* EnforceCastLimits::GetCannotCastString(RE::MagicSystem::CannotCastReason a_reason) {
+		const auto underlying = std::to_underlying(a_reason);
+		const auto* normalReason = _getCannotCastString(a_reason);
+		if (underlying == 101) {
+			return "This spell is too advanced for you.";
+		}
+		return normalReason;
+    }
 }

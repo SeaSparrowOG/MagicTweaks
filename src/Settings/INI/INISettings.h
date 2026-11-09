@@ -74,8 +74,12 @@ namespace Settings
 		inline static constexpr const char* BOUND_SPELLS_UI = "Bound Spells|bShowInUI";
 		inline static constexpr const char* BOUND_SPELLS_EXP = "Bound Spells|bEarnExperienceInCombat";
 		inline static constexpr const char* MAGICKA_SHIELD = "Magicka Shield|bInstall";
+		
+		inline static constexpr const char* TWEAK_CASTING_SPEED = "Tweaks|bTweakCastingSpeed";
+		inline static constexpr const char* TWEAK_CASTING_SPEED_PERCENT = "Tweaks|fCastingSlowPercentPerTier";
+		inline static constexpr const char* TWEAK_MAX_SKILL_DIFFERENCE = "Tweaks|iMaxSkillDifference";
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 24;
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 27;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			FIX_POISON,
 			FIX_SELF,
@@ -100,7 +104,11 @@ namespace Settings
 			BOUND_SPELLS,
 			BOUND_SPELLS_UI,
 			BOUND_SPELLS_EXP,
-			MAGICKA_SHIELD
+			MAGICKA_SHIELD,
+
+			TWEAK_CASTING_SPEED,
+			TWEAK_CASTING_SPEED_PERCENT,
+			TWEAK_MAX_SKILL_DIFFERENCE
 		};
 
 		template <typename T>
