@@ -32,6 +32,6 @@ namespace RE::Offset
 	}
 	namespace Papyrus
 	{
-		constexpr auto GetItemCount = REL::ID(56173);
+		constexpr auto GetItemCount = REL::ID(56497);
 	}
 }
