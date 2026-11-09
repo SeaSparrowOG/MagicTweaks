@@ -30,4 +30,8 @@ namespace RE::Offset
 	{
 		constexpr auto GetCannotCastReasonString = REL::ID(11423);
 	}
+	namespace Papyrus
+	{
+		constexpr auto GetItemCount = REL::ID(56173);
+	}
 }
