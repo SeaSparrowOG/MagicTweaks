@@ -22,6 +22,10 @@ namespace RE::Offset
 	{
 		constexpr auto CalculateCost = REL::ID(11321);
 	}
+	namespace MagicTarget
+	{
+		constexpr auto UpdateActiveEffects = REL::ID(34527);
+	}
 	namespace MagicSystem
 	{
 		constexpr auto GetCannotCastReasonString = REL::ID(11423);

@@ -36,20 +36,7 @@ namespace Hooks::Tweaks
 			success &= EnforceCastLimits::PatchCheckCast();
 		}
 
-		success &= ArchetypePatch<RE::CloakEffect>::Patch();
-		success &= ArchetypePatch<RE::BoundItemEffect>::Patch();
-		success &= ArchetypePatch<RE::LightEffect>::Patch();
-		success &= ArchetypePatch<RE::InvisibilityEffect>::Patch();
-		success &= ArchetypePatch<RE::ScriptEffect>::Patch();
-		success &= ArchetypePatch<RE::ValueModifierEffect>::Patch();
-		success &= ArchetypePatch<RE::PeakValueModifierEffect>::Patch();
-		success &= ArchetypePatch<RE::DualValueModifierEffect>::Patch();
-		success &= ArchetypePatch<RE::CommandEffect>::Patch();
-		success &= ArchetypePatch<RE::CommandSummonedEffect>::Patch();
-		success &= ArchetypePatch<RE::SummonCreatureEffect>::Patch();
-		success &= ArchetypePatch<RE::CalmEffect>::Patch();
-		success &= ArchetypePatch<RE::DemoralizeEffect>::Patch();
-		success &= ArchetypePatch<RE::FrenzyEffect>::Patch();
+		success &= ActiveEffectDurationPatch::Patch();
 
 		return success;
 	}
@@ -510,5 +497,59 @@ namespace Hooks::Tweaks
 			return "This spell is too advanced for you.";
 		}
 		return normalReason;
+    }
+
+    bool ActiveEffectDurationPatch::Patch() {
+		REL::Relocation<std::uintptr_t> target{ RE::Offset::MagicTarget::UpdateActiveEffects , 0xC6 };
+		if (!REL::Pattern<"E8">().match(target.address())) {
+			REX::CRITICAL("    >Failed to validate the hook pattern."sv);
+			return false;
+		}
+		auto& trampoline = REL::GetTrampoline();
+		_update = trampoline.write_call<5>(target.address(), &Update);
+        return true;
+    }
+
+    inline void ActiveEffectDurationPatch::Update(RE::ActiveEffect* a_this, float a_delta) {
+		const float previousElapsed = a_this->elapsedSeconds;
+		_update(a_this, a_delta);
+		if (!a_this) {
+			return;
+		}
+
+		if (auto* boundManager = BoundEffectManager::BoundEffectManager::GetSingleton(); 
+			boundManager && boundManager->IsBoundEffect(a_this))
+		{
+			a_this->elapsedSeconds = previousElapsed;
+			return;
+		}
+
+		if (!g_extendInDialogue) {
+			return;
+		}
+
+		using ActiveEffectFlag = RE::EffectSetting::EffectSettingData::Flag;
+		auto* ui = RE::UI::GetSingleton();
+		if (!ui) {
+			return;
+		}
+
+		if (!ui->IsMenuOpen(RE::DialogueMenu::MENU_NAME)) {
+			return;
+		}
+
+		const auto* caster = a_this->GetCasterActor().get();
+		const auto* target = a_this->GetTargetActor();
+		const auto* base = a_this->effect ? a_this->effect->baseEffect : nullptr;
+		if (!base || !caster || !caster->IsPlayerRef() || !target) {
+			return;
+		}
+
+		if (base->data.flags.any(ActiveEffectFlag::kDetrimental,
+			ActiveEffectFlag::kHostile,
+			ActiveEffectFlag::kNoDuration)) {
+			return;
+		}
+		a_this->elapsedSeconds = previousElapsed;
     }
 }

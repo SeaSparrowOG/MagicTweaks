@@ -69,6 +69,15 @@ namespace Hooks::Tweaks {
 		inline static constexpr const char* SheatheArray = "DispelOnSeathe";
 	};
 
+	struct ActiveEffectDurationPatch
+	{
+		[[nodiscard]] static bool Patch();
+		inline static void Update(RE::ActiveEffect* a_this, float a_delta);
+		inline static REL::Relocation<decltype(Update)> _update;
+	};
+
+	/*
+	Deprecated since 2.5.0 - I use MagicTarget -> Update instead
 	template <typename T>
 	struct ArchetypePatch
 	{
@@ -125,4 +134,5 @@ namespace Hooks::Tweaks {
 
 		inline static REL::Relocation<decltype(&Update)> _func;
 	};
+	*/
 }
