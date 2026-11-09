@@ -464,7 +464,20 @@ namespace Hooks::Tweaks
 
 		const auto* actor = a_this ? a_this->GetCasterAsActor() : nullptr;
 		const auto* spell = a_spell ? a_spell->As<RE::SpellItem>() : nullptr;
-		if (!actor || !spell) {
+		if (!actor || !spell || !actor->IsPlayerRef()) {
+			return canCast;
+		}
+
+		const auto castingSource = a_this->castingSource;
+		switch (castingSource) {
+			case RE::MagicSystem::CastingSource::kLeftHand:
+			case RE::MagicSystem::CastingSource::kRightHand:
+				break;
+			default:
+				return canCast;
+		}
+
+		if (spell->GetSpellType() != RE::MagicSystem::SpellType::kSpell) {
 			return canCast;
 		}
 
