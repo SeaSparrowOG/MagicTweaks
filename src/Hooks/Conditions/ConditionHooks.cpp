@@ -21,7 +21,7 @@ namespace Hooks::Conditions
 		REL::Relocation<std::uintptr_t> papyrusTargetMultiple{ RE::Offset::Papyrus::GetItemCount, 0xEC };
 
 		bool success = true;
-		
+
 		if (!REL::Pattern<"E8">().match(papyrusTargetSingle.address())) {
 			success = false;
 			REX::CRITICAL("      >Failed to match the expected pattern for Single Papyrus GetItemCount."sv);
@@ -40,6 +40,8 @@ namespace Hooks::Conditions
 
 		auto& trampoline = REL::GetTrampoline();
 		_getItemCount = trampoline.write_call<5>(target.address(), GetItemCount);
+		_Papyrus_GetItemCount_SingleItem = trampoline.write_call<5>(papyrusTargetSingle.address(), Papyrus_GetItemCount_SingleItem);
+		_Papyrus_GetItemCount_MultipleForms = trampoline.write_call<5>(papyrusTargetMultiple.address(), Papyrus_GetItemCount_MultipleForms);
 		return success;
 	}
 
@@ -67,13 +69,13 @@ namespace Hooks::Conditions
 		RE::TESBoundObject *a_obj)
     {
         auto altOut = get_alt_count(a_inv, a_obj);
-		return altOut.has_value() ? altOut.value() : _getItemCount(a_inv, a_obj);
+		return altOut.has_value() ? altOut.value() : _Papyrus_GetItemCount_SingleItem(a_inv, a_obj);
     }
 
     inline int32_t GetActorItemCountHook::Papyrus_GetItemCount_MultipleForms(RE::InventoryChanges *a_inv, 
 		RE::TESBoundObject *a_obj)
     {
         auto altOut = get_alt_count(a_inv, a_obj);
-		return altOut.has_value() ? altOut.value() : _getItemCount(a_inv, a_obj);
+		return altOut.has_value() ? altOut.value() : _Papyrus_GetItemCount_MultipleForms(a_inv, a_obj);
     }
 }
