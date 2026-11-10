@@ -83,6 +83,12 @@ namespace ConditionManager
 			return a_data.commandedActor ? a_data.commandedActor.get().get() : nullptr;
 		};
 
+		const auto get_effects = [](const auto& a_data) {
+			const auto* ame = a_data.activeEffect;
+			const auto* spell = ame ? ame->spell : nullptr;
+			return spell ? &spell->effects : nullptr;
+		};
+
 		const auto is_summoned = [&](const auto& a_data) {
 			const auto* actor = get_actor(a_data);
 			return actor && actor->IsSummoned();
@@ -92,15 +98,18 @@ namespace ConditionManager
 			const auto* actor = get_actor(a_data);
 			return actor && actor->IsReanimated();
 		};
-		
-		const auto has_resistance = [&](const auto& a_data, RE::ActorValue a_value) {
-			const auto* actor = get_actor(a_data);
-			if (!actor || !actor->IsSummoned() || actor->IsReanimated()) {
-				return false;
-			}
 
-			const auto* avOwner = actor->As<RE::ActorValueOwner>();
-			return avOwner && avOwner->GetBaseActorValue(a_value) >= 100.0f;
+		const auto effect_has_keyword = [&](const auto* effect, const auto* kwd) {
+			auto* base = effect ? effect->baseEffect : nullptr;
+			return base && base->HasKeyword(kwd);
+		};
+		
+		const auto commanding_spell_has_keyword = [&](const auto& a_data, const RE::BGSKeyword* a_kwd) {
+			const auto* effects = get_effects(a_data);
+			return effects && 
+				std::ranges::any_of(*effects, [&](const auto* effect) { 
+					return effect_has_keyword(effect, a_kwd); 
+				});
 		};
 
 		if (conjuredCount == a_obj) {
@@ -112,18 +121,21 @@ namespace ConditionManager
 			});
 		}
 		if (fireCount == a_obj) {
+			static const auto* kwd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x24823);
 			return get_matching_minions(minions, [&](const auto& a_data) {
-				return has_resistance(a_data, RE::ActorValue::kResistFire);
+				return commanding_spell_has_keyword(a_data, kwd);
 			});
 		}
 		if (frostCount == a_obj) {
+			static const auto* kwd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x24829);
 			return get_matching_minions(minions, [&](const auto& a_data) {
-				return has_resistance(a_data, RE::ActorValue::kResistFrost);
+				return commanding_spell_has_keyword(a_data, kwd);
 			});
 		}
 		if (shockCount == a_obj) {
+			static const auto* kwd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x2482A);
 			return get_matching_minions(minions, [&](const auto& a_data) {
-				return has_resistance(a_data, RE::ActorValue::kResistShock);
+				return commanding_spell_has_keyword(a_data, kwd);
 			});
 		}
 		if (reanimatedCount == a_obj) {
