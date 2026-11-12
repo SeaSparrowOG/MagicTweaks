@@ -76,6 +76,16 @@ namespace Hooks::Tweaks {
 		inline static REL::Relocation<decltype(Update)> _update;
 	};
 
+	struct ProjectilePatch
+	{
+		[[nodiscard]] static bool Patch();
+
+		static RE::EffectSetting* ProcessProjectile(RE::MagicItem* a_this);
+		static RE::EffectSetting* ProcessImpact(RE::MagicItem* a_this);
+		inline static REL::Relocation<decltype(ProcessProjectile)> _processProjectile;
+		inline static REL::Relocation<decltype(ProcessImpact)> _processImpact;
+	};
+
 	/*
 	Deprecated since 2.5.0 - I use MagicTarget -> Update instead
 	template <typename T>

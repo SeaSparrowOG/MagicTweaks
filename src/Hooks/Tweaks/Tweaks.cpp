@@ -17,7 +17,11 @@ namespace Hooks::Tweaks
 		bool installSheatheTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DISPEL).value_or(false);
 		bool installCastingSpeedTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_CASTING_SPEED).value_or(false);
 		bool installCastRequirementsTweak = Settings::INI::GetSetting<long>(Settings::INI::TWEAK_MAX_SKILL_DIFFERENCE).value_or(0) > 0;
+		bool installProjectileTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_PROJECTILE_REPLACEMENT).value_or(false);
 
+		if (installProjectileTweak) {
+			success &= ProjectilePatch::Patch();
+		}
 		if (installReductionTweak) {
 			success &= ModifySpellReduction::PatchSpellReduction();
 		}
@@ -551,5 +555,38 @@ namespace Hooks::Tweaks
 			return;
 		}
 		a_this->elapsedSeconds = previousElapsed;
+    }
+
+    bool ProjectilePatch::Patch() {
+		REX::INFO("  - Installing the projectile tweak..."sv);
+		REL::Relocation<std::uintptr_t> impactTarget{ RE::Offset::MagicCaster::ImpactID , 0x228 };
+		REL::Relocation<std::uintptr_t> projectileTarget{ RE::Offset::MagicCaster::ProjectileID , 0x53 };
+
+		bool success = true;
+		if (!REL::Pattern<"E8">().match(impactTarget.address())) {
+			REX::CRITICAL("    >Failed to validate the pattern for the projectile callsite."sv);
+			return false;
+		}
+		if (!REL::Pattern<"E8">().match(projectileTarget.address())) {
+			REX::CRITICAL("    >Failed to validate the pattern for the impact callsite."sv);
+			return false;
+		}
+
+		if (!success) {
+			return false;
+		}
+		auto& trampoline = REL::GetTrampoline();
+
+		_processImpact = trampoline.write_call<5>(impactTarget.address(), &ProcessImpact);
+		_processProjectile = trampoline.write_call<5>(projectileTarget.address(), &ProcessProjectile);
+        return true;
+    }
+
+    RE::EffectSetting *ProjectilePatch::ProcessProjectile(RE::MagicItem* a_this) {
+        return _processProjectile(a_this);
+    }
+
+    RE::EffectSetting *ProjectilePatch::ProcessImpact(RE::MagicItem* a_this) {
+        return _processImpact(a_this);
     }
 }
