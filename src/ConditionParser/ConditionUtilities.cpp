@@ -54,8 +54,6 @@ namespace ConditionParser {
 
 	[[nodiscard]] static bool evaluate_condition(const RE::TESConditionItem* head, EvalContext& ctx) noexcept {
 		using funcID = RE::FUNCTION_DATA::FunctionID;
-		const bool checkAll = ctx._checkAll;
-
 		const auto& id = head->data.functionData.function;
 		const bool supported = id.any(funcID::kGetBaseActorValue, 
 			funcID::kGetIsPlayableRace, 
