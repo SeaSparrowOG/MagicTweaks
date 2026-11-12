@@ -34,7 +34,7 @@ namespace Hooks::DynamicDescription
 		RE::BSString& a_out)
 	{
 		_getSpellDescription(a1, a2, a_out);
-		auto proposedDescription = ConditionParser::GetFormattedDescription(a2);
+		auto proposedDescription = ConditionParser::get_alt_spell_description(a2);
 		if (!proposedDescription.empty()) {
 			a_out = proposedDescription;
 		}
@@ -56,7 +56,7 @@ namespace Hooks::DynamicDescription
 		RE::BSString& a_out)
 	{
 		_getSpellTomeDescription(a1, a2, a_out);
-		auto proposedDescription = ConditionParser::GetFormattedDescription(a2);
+		auto proposedDescription = ConditionParser::get_alt_spell_description(a2);
 		if (!proposedDescription.empty()) {
 			a_out = proposedDescription;
 		}
@@ -78,7 +78,7 @@ namespace Hooks::DynamicDescription
 		RE::BSString& a_out)
 	{
 		_getEnchantmentDescription(a1, a2, a_out);
-		auto proposedDescription = ConditionParser::GetFormattedDescription(a2);
+		auto proposedDescription = ConditionParser::get_alt_spell_description(a2);
 		if (!proposedDescription.empty()) {
 			a_out = proposedDescription;
 		}

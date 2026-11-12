@@ -2,5 +2,6 @@
 
 namespace ConditionParser
 {
-	std::string GetFormattedDescription(RE::SpellItem* a_spell);
+	[[nodiscard]]
+	std::string get_alt_spell_description(RE::SpellItem* a_spell);
 }
