@@ -17,8 +17,7 @@ namespace RE::Offset
 	namespace MagicCaster
 	{
 		constexpr auto ChargeSpell = REL::ID(34146);
-		constexpr auto ImpactID = REL::ID(44100);
-		constexpr auto ProjectileID = REL::ID(34450);
+		constexpr auto FireSpell = REL::ID(34452);
 	}
 	namespace MagicItem
 	{

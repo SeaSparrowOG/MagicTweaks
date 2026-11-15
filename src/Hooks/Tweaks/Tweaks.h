@@ -80,10 +80,8 @@ namespace Hooks::Tweaks {
 	{
 		[[nodiscard]] static bool Patch();
 
-		static RE::EffectSetting* ProcessProjectile(RE::MagicItem* a_this);
-		static RE::EffectSetting* ProcessImpact(RE::MagicItem* a_this);
+		static RE::ProjectileHandle* ProcessProjectile(RE::ProjectileHandle* result, RE::Projectile::LaunchData& data);
 		inline static REL::Relocation<decltype(ProcessProjectile)> _processProjectile;
-		inline static REL::Relocation<decltype(ProcessImpact)> _processImpact;
 	};
 
 	/*

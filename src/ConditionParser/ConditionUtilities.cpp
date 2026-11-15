@@ -336,4 +336,25 @@ namespace ConditionParser {
 		}
 		return newDescription;
 	}
+
+    bool is_effect_valid(const RE::Effect* effect) {
+		const auto* base = effect ? effect->baseEffect : nullptr;
+		if (!base) {
+			return false;
+		}
+
+		EvalContext ctx{};
+		auto* player = ctx._player;
+		if (!player) {
+			REX::ERROR("Failed to get Player Character when constructing conditions."sv);
+			return false;
+		}
+
+		auto params = RE::ConditionCheckParams(player, player);
+		ctx._params = &params;
+		ctx._effect = effect;
+		ctx._base = base;
+		ctx._checkAll = check_all_conditions(base);
+        return is_valid(ctx);
+    }
 }

@@ -1,5 +1,6 @@
 #include "Tweaks.h"
 
+#include "ConditionParser/ConditionUtilities.h"
 #include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 #include "Settings/JSON/JSONSettings.h"
@@ -559,16 +560,11 @@ namespace Hooks::Tweaks
 
     bool ProjectilePatch::Patch() {
 		REX::INFO("  - Installing the projectile tweak..."sv);
-		REL::Relocation<std::uintptr_t> impactTarget{ RE::Offset::MagicCaster::ImpactID , 0x228 };
-		REL::Relocation<std::uintptr_t> projectileTarget{ RE::Offset::MagicCaster::ProjectileID , 0x53 };
+		REL::Relocation<std::uintptr_t> impactTarget{ RE::Offset::MagicCaster::FireSpell , 0x354 };
 
 		bool success = true;
 		if (!REL::Pattern<"E8">().match(impactTarget.address())) {
 			REX::CRITICAL("    >Failed to validate the pattern for the projectile callsite."sv);
-			return false;
-		}
-		if (!REL::Pattern<"E8">().match(projectileTarget.address())) {
-			REX::CRITICAL("    >Failed to validate the pattern for the impact callsite."sv);
 			return false;
 		}
 
@@ -576,17 +572,105 @@ namespace Hooks::Tweaks
 			return false;
 		}
 		auto& trampoline = REL::GetTrampoline();
-
-		_processImpact = trampoline.write_call<5>(impactTarget.address(), &ProcessImpact);
-		_processProjectile = trampoline.write_call<5>(projectileTarget.address(), &ProcessProjectile);
+		_processProjectile = trampoline.write_call<5>(impactTarget.address(), &ProcessProjectile);
         return true;
     }
 
-    RE::EffectSetting *ProjectilePatch::ProcessProjectile(RE::MagicItem* a_this) {
-        return _processProjectile(a_this);
-    }
+	enum class AVPreference : uint8_t
+	{
+		None,
+		Illusion,
+		Conjuration,
+		Restoration,
+		Alteration,
+		Destruction
+	};
 
-    RE::EffectSetting *ProjectilePatch::ProcessImpact(RE::MagicItem* a_this) {
-        return _processImpact(a_this);
+	[[nodiscard]]
+	static AVPreference get_school_preference(const RE::ActorValue av) {
+		switch (av) {
+			case RE::ActorValue::kIllusion: return AVPreference::Illusion;
+			case RE::ActorValue::kConjuration: return AVPreference::Conjuration;
+			case RE::ActorValue::kRestoration: return AVPreference::Restoration;
+			case RE::ActorValue::kAlteration: return AVPreference::Alteration;
+			case RE::ActorValue::kDestruction: return AVPreference::Destruction;
+			default: return AVPreference::None;
+		}
+	}
+
+	[[nodiscard]]
+	static bool has_higher_precedence(const RE::ActorValue lhs, const RE::ActorValue rhs) {
+		return get_school_preference(lhs) >= get_school_preference(rhs);
+	}
+
+	[[nodiscard]]
+	static const RE::Effect* compare_effects(const RE::Effect* lhs, const RE::Effect* rhs) {
+		if (!rhs) {
+			return lhs;
+		}
+		const auto* base = lhs ? lhs->baseEffect : nullptr;
+		if (!base) {
+			return rhs;
+		}
+
+		const auto* proj = base->data.projectileBase;
+		if (!proj) {
+			return rhs;
+		}
+
+		const auto school = base->data.associatedSkill;
+		const auto prevSchool = rhs->baseEffect->data.associatedSkill;
+		if (has_higher_precedence(school, prevSchool)) {
+			return lhs;
+		}
+
+		return rhs;
+	}
+
+	struct EvalContext {
+		RE::ActorValue lastAV;
+	};
+
+	[[nodiscard]]
+	static RE::EffectSetting* get_alt_projectile(const RE::MagicItem* a_this) {
+		const auto* spell = a_this && a_this->formType == RE::SpellItem::FORMTYPE ? 
+			a_this->As<RE::SpellItem>() : 
+			nullptr;
+
+		if (!spell || spell->data.spellType != RE::MagicSystem::SpellType::kSpell) {
+			return nullptr;
+		}
+
+		const auto& effects = spell->effects;
+		if (effects.empty()) {
+			return nullptr;
+		}
+
+		const RE::Effect* bestMatch = nullptr;
+		for (const auto* effect : effects) {
+			if (!ConditionParser::is_effect_valid(effect)) {
+				continue;
+			}
+			bestMatch = compare_effects(effect, bestMatch);
+		}
+		return bestMatch->baseEffect;
+	}
+
+    RE::ProjectileHandle* ProjectilePatch::ProcessProjectile(RE::ProjectileHandle* result, RE::Projectile::LaunchData& data) {
+        const auto* spell = data.spell;
+		const auto* candidate = get_alt_projectile(spell);
+		if (candidate) {
+			const auto& effData = candidate->data;
+			auto* proj = effData.projectileBase;
+			if (proj)
+			data.projectileBase = proj ? proj : data.projectileBase;
+		}
+		auto* res = _processProjectile(result, data);
+		auto* proj = res ? res->get().get() : nullptr;
+		if (candidate && proj) {
+			const auto& effData = candidate->data;
+			proj->explosion = effData.explosion;
+		}
+		return res;
     }
 }
