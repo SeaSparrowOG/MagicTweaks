@@ -658,19 +658,22 @@ namespace Hooks::Tweaks
 
     RE::ProjectileHandle* ProjectilePatch::ProcessProjectile(RE::ProjectileHandle* result, RE::Projectile::LaunchData& data) {
         const auto* spell = data.spell;
-		const auto* candidate = get_alt_projectile(spell);
-		if (candidate) {
-			const auto& effData = candidate->data;
-			auto* proj = effData.projectileBase;
-			if (proj)
-			data.projectileBase = proj ? proj : data.projectileBase;
+		const auto* altEffect = get_alt_projectile(spell);
+		if (altEffect) {
+			auto* projBase = altEffect->data.projectileBase;
+			if (projBase) {
+				data.projectileBase = projBase;
+			}
+
+			auto* res = _processProjectile(result, data);
+			auto* proj = res ? res->get().get() : nullptr;
+			if (proj) {
+				const auto& effData = altEffect->data;
+				effData.impactDataSet;
+				proj->explosion = effData.explosion;
+			}
+			return res; 
 		}
-		auto* res = _processProjectile(result, data);
-		auto* proj = res ? res->get().get() : nullptr;
-		if (candidate && proj) {
-			const auto& effData = candidate->data;
-			proj->explosion = effData.explosion;
-		}
-		return res;
+		return _processProjectile(result, data);
     }
 }
