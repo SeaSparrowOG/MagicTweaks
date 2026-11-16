@@ -1,5 +1,6 @@
 #include "Tweaks.h"
 
+#include "Conditions/Evaluation.h"
 #include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 #include "Settings/JSON/JSONSettings.h"
@@ -17,7 +18,11 @@ namespace Hooks::Tweaks
 		bool installSheatheTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_DISPEL).value_or(false);
 		bool installCastingSpeedTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_CASTING_SPEED).value_or(false);
 		bool installCastRequirementsTweak = Settings::INI::GetSetting<long>(Settings::INI::TWEAK_MAX_SKILL_DIFFERENCE).value_or(0) > 0;
+		bool installProjectileTweak = Settings::INI::GetSetting<bool>(Settings::INI::TWEAK_PROJECTILE_REPLACEMENT).value_or(false);
 
+		if (installProjectileTweak) {
+			success &= ProjectilePatch::Patch();
+		}
 		if (installReductionTweak) {
 			success &= ModifySpellReduction::PatchSpellReduction();
 		}
@@ -551,5 +556,124 @@ namespace Hooks::Tweaks
 			return;
 		}
 		a_this->elapsedSeconds = previousElapsed;
+    }
+
+    bool ProjectilePatch::Patch() {
+		REX::INFO("  - Installing the projectile tweak..."sv);
+		REL::Relocation<std::uintptr_t> impactTarget{ RE::Offset::MagicCaster::FireSpell , 0x354 };
+
+		bool success = true;
+		if (!REL::Pattern<"E8">().match(impactTarget.address())) {
+			REX::CRITICAL("    >Failed to validate the pattern for the projectile callsite."sv);
+			return false;
+		}
+
+		if (!success) {
+			return false;
+		}
+		auto& trampoline = REL::GetTrampoline();
+		_processProjectile = trampoline.write_call<5>(impactTarget.address(), &ProcessProjectile);
+        return true;
+    }
+
+	enum class AVPreference : uint8_t
+	{
+		None,
+		Illusion,
+		Conjuration,
+		Restoration,
+		Alteration,
+		Destruction
+	};
+
+	[[nodiscard]]
+	static AVPreference get_school_preference(const RE::ActorValue av) {
+		switch (av) {
+			case RE::ActorValue::kIllusion: return AVPreference::Illusion;
+			case RE::ActorValue::kConjuration: return AVPreference::Conjuration;
+			case RE::ActorValue::kRestoration: return AVPreference::Restoration;
+			case RE::ActorValue::kAlteration: return AVPreference::Alteration;
+			case RE::ActorValue::kDestruction: return AVPreference::Destruction;
+			default: return AVPreference::None;
+		}
+	}
+
+	[[nodiscard]]
+	static bool has_higher_precedence(const RE::ActorValue lhs, const RE::ActorValue rhs) {
+		return get_school_preference(lhs) >= get_school_preference(rhs);
+	}
+
+	[[nodiscard]]
+	static const RE::Effect* compare_effects(const RE::Effect* lhs, const RE::Effect* rhs) {
+		if (!rhs) {
+			return lhs;
+		}
+		const auto* base = lhs ? lhs->baseEffect : nullptr;
+		if (!base) {
+			return rhs;
+		}
+
+		const auto* proj = base->data.projectileBase;
+		if (!proj) {
+			return rhs;
+		}
+
+		const auto school = base->data.associatedSkill;
+		const auto prevSchool = rhs->baseEffect->data.associatedSkill;
+		if (has_higher_precedence(school, prevSchool)) {
+			return lhs;
+		}
+
+		return rhs;
+	}
+
+	struct EvalContext {
+		RE::ActorValue lastAV;
+	};
+
+	[[nodiscard]]
+	static RE::EffectSetting* get_alt_projectile(const RE::MagicItem* a_this) {
+		const auto* spell = a_this && a_this->formType == RE::SpellItem::FORMTYPE ? 
+			a_this->As<RE::SpellItem>() : 
+			nullptr;
+
+		if (!spell || spell->data.spellType != RE::MagicSystem::SpellType::kSpell) {
+			return nullptr;
+		}
+
+		const auto& effects = spell->effects;
+		if (effects.empty()) {
+			return nullptr;
+		}
+
+		const RE::Effect* bestMatch = nullptr;
+		for (const auto* effect : effects) {
+			if (!Conditions::is_effect_valid(effect)) {
+				continue;
+			}
+			bestMatch = compare_effects(effect, bestMatch);
+		}
+		return bestMatch->baseEffect;
+	}
+
+    RE::ProjectileHandle* ProjectilePatch::ProcessProjectile(RE::ProjectileHandle* result, RE::Projectile::LaunchData& data) {
+        const auto* spell = data.spell;
+		const auto* altEffect = get_alt_projectile(spell);
+		if (altEffect) {
+			auto* projBase = altEffect->data.projectileBase;
+			if (projBase) {
+				data.projectileBase = projBase;
+			}
+
+			auto* res = _processProjectile(result, data);
+			auto* proj = res ? res->get().get() : nullptr;
+			if (proj) {
+				const auto& effData = altEffect->data;
+				effData.impactDataSet;
+				proj->explosion = effData.explosion;
+			}
+			return res; 
+		}
+		return _processProjectile(result, data);
     }
 }

@@ -1,6 +1,6 @@
 #include "Hooks/hooks.h"
 
-#include "Conditions/ConditionHooks.h"
+#include "GameConditions/ConditionHooks.h"
 #include "DynamicDescription/DynamicDescription.h"
 #include "MagicCaster/MagicCasterHooks.h"
 #include "MagickaShield/MagickaShield.h"
@@ -15,7 +15,7 @@ namespace Hooks {
 		REX::INFO("Installing hooks..."sv);
 
 		bool success = true;
-		success &= Hooks::Conditions::Install();
+		success &= Hooks::GameConditions::Install();
 		success &= Hooks::DynamicDescription::InstallDynamicDescriptionPatch();
 		success &= Hooks::PlayerCharacter::Install();
 		success &= Hooks::MagicCaster::Install();

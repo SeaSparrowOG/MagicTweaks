@@ -2,7 +2,7 @@
 
 namespace Hooks
 {
-	namespace Conditions
+	namespace GameConditions
 	{
 		bool Install();
 

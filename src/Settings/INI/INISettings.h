@@ -78,8 +78,10 @@ namespace Settings
 		inline static constexpr const char* TWEAK_CASTING_SPEED = "Tweaks|bTweakCastingSpeed";
 		inline static constexpr const char* TWEAK_CASTING_SPEED_PERCENT = "Tweaks|fCastingSlowPercentPerTier";
 		inline static constexpr const char* TWEAK_MAX_SKILL_DIFFERENCE = "Tweaks|iMaxSkillDifference";
+		
+		inline static constexpr const char* TWEAK_PROJECTILE_REPLACEMENT = "Tweaks|bPickBetterProjectiles";
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 27;
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 28;
 		inline static constexpr const std::array<const char*, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			FIX_POISON,
 			FIX_SELF,
@@ -108,7 +110,9 @@ namespace Settings
 
 			TWEAK_CASTING_SPEED,
 			TWEAK_CASTING_SPEED_PERCENT,
-			TWEAK_MAX_SKILL_DIFFERENCE
+			TWEAK_MAX_SKILL_DIFFERENCE,
+
+			TWEAK_PROJECTILE_REPLACEMENT
 		};
 
 		template <typename T>

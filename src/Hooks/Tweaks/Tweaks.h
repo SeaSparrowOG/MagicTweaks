@@ -76,6 +76,14 @@ namespace Hooks::Tweaks {
 		inline static REL::Relocation<decltype(Update)> _update;
 	};
 
+	struct ProjectilePatch
+	{
+		[[nodiscard]] static bool Patch();
+
+		static RE::ProjectileHandle* ProcessProjectile(RE::ProjectileHandle* result, RE::Projectile::LaunchData& data);
+		inline static REL::Relocation<decltype(ProcessProjectile)> _processProjectile;
+	};
+
 	/*
 	Deprecated since 2.5.0 - I use MagicTarget -> Update instead
 	template <typename T>

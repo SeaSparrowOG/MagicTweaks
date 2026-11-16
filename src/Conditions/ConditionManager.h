@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ConditionManager
+namespace Conditions
 {
 	bool Initialize();
 

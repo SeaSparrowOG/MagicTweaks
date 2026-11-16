@@ -1,5 +1,5 @@
 #include "BoundEffectManager/BoundEffectManager.h"
-#include "ConditionManager/ConditionManager.h"
+#include "Conditions/ConditionManager.h"
 #include "Data/ModObjectManager.h"
 #include "Events/Events.h"
 #include "Hooks/Hooks.h"
@@ -21,7 +21,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 			REX::FAIL("Failed to read JSON settings. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
-		if (!ConditionManager::Initialize()) {
+		if (!Conditions::Initialize()) {
 			REX::FAIL("Failed to initialize the Condition Manager. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
@@ -65,7 +65,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
 
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 {
-	constexpr std::size_t allocSize = 224u;
+	constexpr std::size_t allocSize = 252u;
 	SKSE::InitInfo info;
 	info.hook = true;
 	info.log = true;
