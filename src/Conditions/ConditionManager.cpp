@@ -2,7 +2,7 @@
 
 #include "Data/ModObjectManager.h"
 
-namespace ConditionManager
+namespace Conditions
 {
 	bool Initialize() {
 		SECTION_SEPARATOR;

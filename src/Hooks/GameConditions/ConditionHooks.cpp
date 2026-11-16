@@ -1,10 +1,10 @@
 #include "ConditionHooks.h"
 
-#include "ConditionManager/ConditionManager.h"
+#include "Conditions/ConditionManager.h"
 #include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 
-namespace Hooks::Conditions
+namespace Hooks::GameConditions
 {
 	bool Install() {
 		if (!Settings::INI::GetSetting<bool>(Settings::INI::ADDITIONAL_CONDITIONS).value_or(false)) {
@@ -47,7 +47,7 @@ namespace Hooks::Conditions
 
 	[[nodiscard]]
 	static std::optional<int32_t> get_alt_count(RE::InventoryChanges* a_inv, RE::TESBoundObject* a_obj) {
-		static auto* manager = ConditionManager::ConditionManager::GetSingleton();
+		static auto* manager = Conditions::ConditionManager::GetSingleton();
 		if (!manager) {
 			return std::nullopt;
 		}

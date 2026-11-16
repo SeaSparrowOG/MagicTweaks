@@ -1,6 +1,6 @@
 #include "Tweaks.h"
 
-#include "ConditionParser/ConditionUtilities.h"
+#include "Conditions/Evaluation.h"
 #include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 #include "Settings/JSON/JSONSettings.h"
@@ -648,7 +648,7 @@ namespace Hooks::Tweaks
 
 		const RE::Effect* bestMatch = nullptr;
 		for (const auto* effect : effects) {
-			if (!ConditionParser::is_effect_valid(effect)) {
+			if (!Conditions::is_effect_valid(effect)) {
 				continue;
 			}
 			bestMatch = compare_effects(effect, bestMatch);

@@ -1,4 +1,4 @@
-#include "ConditionUtilities.h"
+#include "Evaluation.h"
 
 namespace {
 	char ascii_lower(const unsigned char chr) { 
@@ -43,7 +43,7 @@ namespace {
 	};
 }
 
-namespace ConditionParser {
+namespace Conditions {
 	struct EvalContext {
 		bool                       _checkAll = true;
 		const RE::Effect*          _effect = nullptr;
