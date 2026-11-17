@@ -29,13 +29,6 @@ namespace Settings
             template <typename T> requires is_ini_setting<T>
             [[nodiscard]]
             std::optional<T> GetSetting(const std::string_view setting) const noexcept {
-                if constexpr (is_string<T>) {
-                    auto it = _settings.find(setting);
-                    if (it == _settings.end()) {
-                        return std::nullopt;
-                    }
-                    return it->second;
-                }
 
                 auto it = _settings.find(setting);
                 if (it == _settings.end()) {
@@ -45,32 +38,35 @@ namespace Settings
                 std::string_view val = it->second;
 
                 if constexpr (is_bool<T>) {
-                    inline constexpr std::array<std::string_view, 2u> truthy = { "1", "true" };
-                    inline constexpr std::array<std::string_view, 2u> falsy = { "0", "false" };
+                    static constexpr std::array<std::string_view, 2u> truthy = { "1", "true" };
+                    static constexpr std::array<std::string_view, 2u> falsy = { "0", "false" };
+                    std::string lower(val.size(), '\0');
+                    std::ranges::transform(val, lower.begin(), ascii_lower);
 
-                    std::ranges::transform(val, val, [](const char chr){
-                        constexpr char  diff = 'a' - 'A';
-                        if (chr >= 'A' && chr <= 'Z') {
-                            return chr + diff;
-                        } 
-                        return chr;
-                    });
-
-                    if (std::ranges::contains(truthy, val)) {
+                    if (std::ranges::contains(truthy, lower)) {
                         return true;
                     }
-                    else if (std::ranges::contains(falsy, val)) {
+                    else if (std::ranges::contains(falsy, lower)) {
                         return false;
                     }
                     return std::nullopt;
                 }
-
-                T out;
-                auto [res, ec] = std::from_chars(val.data(), val.data() + val.size(), out);
-                if (ec) {
-                    return std::nullopt;
+                else if constexpr (is_numeric<T>) {
+                    T out;
+                    auto [res, ec] = std::from_chars(val.data(), val.data() + val.size(), out);
+                    if (ec != std::errc{} || res.ptr != val.data() + val.size()) {
+                        return std::nullopt;
+                    }
+                    return out;
                 }
-                return out;
+                else {
+                    if constexpr (same_underlying<T, std::string>) {
+                        return std::string(val);
+                    }
+                    else if constexpr (same_underlying<T, std::string_view>) {
+                        return val;
+                    }
+                }
             }
 
         private:
@@ -78,6 +74,14 @@ namespace Settings
 
             [[nodiscard]] bool ReadINI(const char* path);
             void DumpSettings() const noexcept;
+
+            static char ascii_lower(const char chr) { 
+                constexpr char diff = 'a' - 'A';
+                if (chr >= 'A' && chr <= 'Z') {
+                    return chr - diff;
+                }
+                return chr;
+            };
         };
 
         inline constexpr const std::string_view FIX_POISON     = "Fixes|bNeverAbsorbPoison";
@@ -140,6 +144,17 @@ namespace Settings
                 return false;
             }
             return holder->Preload();
+        }
+
+        template <typename T> requires is_ini_setting<T>
+        [[nodiscard]]
+        std::optional<T> Get(const std::string_view setting) noexcept {
+            static auto* ini = INIHolder::GetSingleton();
+            if (!ini) {
+                REX::ERROR("Failed to get internal INI holder when requests."sv);
+                return std::nullopt;
+            }
+            return ini->GetSetting<T>(setting);
         }
     }
 }
