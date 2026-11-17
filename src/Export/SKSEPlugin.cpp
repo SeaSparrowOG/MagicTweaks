@@ -2,7 +2,6 @@
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/spdlog.h>
 
-#include "Data/ModObjects.hpp"
 #include "Events/Events.hpp"
 #include "Hooks/Hooks.hpp"
 #include "Papyrus/Papyrus.hpp"
@@ -52,7 +51,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg) {
 	switch (a_msg->type) {
         case SKSE::MessagingInterface::kDataLoaded:
 			SECTION_SEPARATOR;
-			if (!Data::Initialize()) {
+			if (!Settings::PostLoad()) {
 				ReportAndFail("Failed to preload game objects");
 			}
 			SECTION_SEPARATOR;
