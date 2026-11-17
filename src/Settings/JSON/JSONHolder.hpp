@@ -49,10 +49,10 @@ namespace Settings
             const std::map<std::string, Json::Value>& GetConfigs() const noexcept { return _configs; }
 
         private:
-            void PreProcess(const std::filesystem::path& path, const std::string& name) noexcept;
+            void PreProcess(const std::filesystem::path& path, const std::string& name);
             void ProcessObject(Json::Value& obj, std::string& path) noexcept;
             static void NormalizeKeys(Json::Value& json,
-                const std::unordered_map<std::string, std::string>& mappings) noexcept;
+                const std::unordered_map<std::string, std::string>& mappings);
 
             struct PreProcessStatus {
                 [[nodiscard]]

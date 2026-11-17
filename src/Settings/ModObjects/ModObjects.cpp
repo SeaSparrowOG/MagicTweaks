@@ -1,7 +1,6 @@
 #include "ModObjects.hpp"
 
-namespace ModObjects {
-	
+namespace Settings::ModObjects {	
     bool GameObjectCache::Load() {
         REX::INFO("  - Looking for script {} on quest {}..."sv, ScriptName, QuestName);
 		const auto quest = RE::TESForm::LookupByEditorID<RE::TESQuest>(QuestName);

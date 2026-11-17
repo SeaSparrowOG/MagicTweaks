@@ -80,6 +80,57 @@ namespace Settings
             void DumpSettings() const noexcept;
         };
 
+        inline constexpr const std::string_view FIX_POISON     = "Fixes|bNeverAbsorbPoison";
+        inline constexpr const std::string_view FIX_SELF       = "Fixes|bNeverAbsorbSelfTargettingEffects";
+        inline constexpr const std::string_view FIX_BENEFICIAL = "Fixes|bNeverAbsorbBeneficialEffects";
+        inline constexpr const std::string_view FIX_CLOAKS     = "Fixes|bFixCloakArchetype";
+
+        inline constexpr const std::string_view TWEAK_DIALOGUE       = "Tweaks|bExtendEffectsInDialogue";
+        inline constexpr const std::string_view TWEAK_DISPEL         = "Tweaks|bDispelOnSheathe";
+        inline constexpr const std::string_view TWEAK_EARN_EXP       = "Tweaks|bEarnConjurationHitExp";
+        inline constexpr const std::string_view TWEAK_UI_DESCRIPTION = "Dynamic Spell Description|bInstall";
+
+        inline constexpr const std::string_view REDUCTION_ENABLE    = "Tweaks|bTweakCostReduction";
+        inline constexpr const std::string_view REDUCTION_WEIGHT    = "Tweaks|fCostReductionSkillWeight";
+        inline constexpr const std::string_view REDUCTION_MIN       = "Tweaks|fMinimumSpellSkill";
+        inline constexpr const std::string_view REDUCTION_MAX_SKILL = "Tweaks|fMaximumSpellSkill";
+        inline constexpr const std::string_view RREDUCTION_MAX_COST = "Tweaks|fMaxSpellCostReduction";
+
+        inline constexpr const std::string_view MECHANICS_CONDITIONS                 = "Additional Conditions|bInstall";
+        inline constexpr const std::string_view MECHANICS_SPELL_BINDING              = "Bound Spells|bInstall";
+        inline constexpr const std::string_view MECHANICS_SPELL_BINDING_UI           = "Bound Spells|bShowInUI";
+        inline constexpr const std::string_view MECHANICS_SPELL_BINDING_EXP          = "Bound Spells|bEarnExperienceInCombat";
+        inline constexpr const std::string_view MECHANICS_MAGICKA_SHIELD             = "Magicka Shield|bInstall";
+        inline constexpr const std::string_view MECHANICS_CASTING_SPEED              = "Tweaks|bTweakCastingSpeed";
+        inline constexpr const std::string_view MECHANICS_CASTING_SPEED_TIER_PENALTY = "Tweaks|fCastingSlowPercentPerTier";
+        inline constexpr const std::string_view MECHANICS_CASTING_SPEED_TIER_BLOCK   = "Tweaks|iMaxSkillDifference";
+
+        inline constexpr std::array<std::string_view, 20u> INI_SETTINGS = {
+            FIX_POISON,
+            FIX_SELF,
+            FIX_BENEFICIAL,
+
+            TWEAK_DIALOGUE,
+            TWEAK_DISPEL,
+            TWEAK_EARN_EXP,
+            TWEAK_UI_DESCRIPTION,
+
+            REDUCTION_ENABLE,
+            REDUCTION_WEIGHT,
+            REDUCTION_MIN,
+            REDUCTION_MAX_SKILL,
+            RREDUCTION_MAX_COST,
+            
+            MECHANICS_CONDITIONS,
+            MECHANICS_SPELL_BINDING,
+            MECHANICS_SPELL_BINDING_UI,
+            MECHANICS_SPELL_BINDING_EXP,
+            MECHANICS_MAGICKA_SHIELD,
+            MECHANICS_CASTING_SPEED,
+            MECHANICS_CASTING_SPEED_TIER_PENALTY,
+            MECHANICS_CASTING_SPEED_TIER_BLOCK
+        };
+
         [[nodiscard]] inline bool Preload() noexcept {
             REX::INFO("  - Initializing INI Settings..."sv);
 

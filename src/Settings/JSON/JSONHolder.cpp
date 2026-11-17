@@ -43,10 +43,7 @@ namespace Settings::JSON
                 REX::WARN("    >Discarding {} - not a json file.", name);
                 continue;
             }
-            const auto where = std::ranges::find_if(paths, [name](const auto& rhs) {
-               return rhs.string() > name;
-            });
-            paths.emplace(where, path);
+            paths.emplace_back(path);
         }
 
         if (paths.empty()) {
@@ -54,6 +51,7 @@ namespace Settings::JSON
             return true;
         }
 
+        std::ranges::sort(paths);
         bool success = true;
         const auto fileCount = paths.size();
         REX::INFO("  - Found {} configuration files", fileCount);
@@ -97,7 +95,7 @@ namespace Settings::JSON
         return success;
     }
 
-    void JSONHolder::PreProcess(const std::filesystem::path& path, const std::string& name) noexcept {
+    void JSONHolder::PreProcess(const std::filesystem::path& path, const std::string& name) {
         status = PreProcessStatus();
         Json::CharReaderBuilder builder;
         builder["collectComments"] = false;
@@ -183,16 +181,16 @@ namespace Settings::JSON
     }
 
     void JSONHolder::NormalizeKeys(Json::Value &json,
-        const std::unordered_map<std::string, std::string> &mappings) noexcept
+        const std::unordered_map<std::string, std::string> &mappings)
     {
         assert(json.isObject());
         for (const auto& [to, from] : mappings) {
             if (from == to || json.isMember(to)) {
                 continue;
             }
-            const auto val = std::move(json[from]);
+            auto val = std::move(json[from]);
             json.removeMember(from);
-            json[to] = val;
+            json[to] = std::move(val);
         }
     }
 
