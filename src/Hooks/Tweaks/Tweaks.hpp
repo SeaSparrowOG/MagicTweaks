@@ -1,0 +1,34 @@
+#pragma once
+
+namespace Hooks
+{
+    namespace Tweaks
+    {
+        inline constexpr size_t ALLOC_SIZE = 14u + 3 * 14u;
+
+        struct ActiveEffectDurationPatch
+        {
+            [[nodiscard]] static bool Patch();
+            inline static void Update(RE::ActiveEffect* a_this, float delta);
+            inline static REL::Relocation<decltype(Update)> _update;
+        };
+
+        struct DescriptionPatch
+        {
+            [[nodiscard]] static bool Patch();
+
+            static void GetSpellDescription(RE::ItemCard* itemCard, RE::SpellItem* spell, RE::BSString& out);
+            static void GetSpellTomeDescription(RE::ItemCard* itemCard, RE::SpellItem* spell, RE::BSString& out);
+            static void GetEnchantmentDescription(RE::ItemCard* itemCard, RE::SpellItem* spell, RE::BSString& out);
+
+			inline static REL::Relocation<decltype(GetSpellDescription)> _getSpellDescription;
+            inline static REL::Relocation<decltype(GetSpellTomeDescription)> _getSpellTomeDescription;
+            inline static REL::Relocation<decltype(GetEnchantmentDescription)> _getEnchantmentDescription;
+        };
+
+        [[nodiscard]] inline bool Install() {
+            REX::INFO("  - Installing tweak-related hooks..."sv);
+            return true;
+        }
+    }
+}

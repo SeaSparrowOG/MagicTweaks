@@ -93,7 +93,7 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse) {
 	info.log = false;
 	info.hook = Hooks::plugin_hooks;
 	info.trampoline = Hooks::plugin_hooks;
-	info.trampolineSize = Hooks::alloc_size;
+	info.trampolineSize = Hooks::ALLOC_SIZE;
 
 	SKSE::Init(a_skse, info);
 	REX::INFO("Author: SeaSparrow"sv);
