@@ -221,18 +221,19 @@ namespace Hooks::Tweaks {
         }
 
         bool allGood = true;
-        auto spellDescriptionTarget = RE::Offset::ItemCard::GetSpellDescription.address();
-        auto spellTomeDescriptionTarget = RE::Offset::ItemCard::GetSpellTomeDescription.address();
-        auto staffDescriptionTarget = RE::Offset::ItemCard::GetStaffDescription.address();
-		if (!REL::Pattern<"E8">().match(spellDescriptionTarget)) {
+        const auto spellDescriptionTarget{ RE::Offset::ItemCard::GetSpellDescription };
+        const auto spellTomeDescriptionTarget{ RE::Offset::ItemCard::GetSpellTomeDescription };
+        const auto staffDescriptionTarget{ RE::Offset::ItemCard::GetStaffDescription };
+
+		if (!spellDescriptionTarget.match()) {
 			REX::CRITICAL("      >Failed to validate the hook pattern for the spell card."sv);
 			allGood = false;
 		}
-		if (!REL::Pattern<"E8">().match(spellTomeDescriptionTarget)) {
+		if (!spellTomeDescriptionTarget.match()) {
 			REX::CRITICAL("      >Failed to validate the hook pattern for the spell tome card."sv);
 			allGood = false;
 		}
-		if (!REL::Pattern<"E8">().match(staffDescriptionTarget)) {
+		if (!staffDescriptionTarget.match()) {
 			REX::CRITICAL("      >Failed to validate the hook pattern for the staff card."sv);
 			allGood = false;
 		}
@@ -240,14 +241,9 @@ namespace Hooks::Tweaks {
             return false;
         }
 
-		auto& trampoline = REL::GetTrampoline();
-
-		_getSpellDescription = 
-            trampoline.write_call<5>(spellDescriptionTarget, &GetSpellDescription);
-		_getSpellTomeDescription = 
-            trampoline.write_call<5>(spellTomeDescriptionTarget, &GetSpellTomeDescription);
-		_getEnchantmentDescription = 
-            trampoline.write_call<5>(staffDescriptionTarget, &GetEnchantmentDescription);
+		_getSpellDescription = spellDescriptionTarget.hook(&GetSpellDescription);
+		_getSpellTomeDescription = spellDescriptionTarget.hook(&GetSpellTomeDescription);
+		_getEnchantmentDescription = spellDescriptionTarget.hook(&GetEnchantmentDescription);
         return true;
     }
 
