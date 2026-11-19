@@ -7,7 +7,7 @@ namespace Hooks
         inline constexpr size_t ALLOC_SIZE = 0u;
 
         [[nodiscard]] inline bool Install() {
-            REX::INFO("  - Installing tweak-related hooks..."sv);
+            REX::INFO("  - Installing gameplay-related hooks..."sv);
             return true;
         }
     }

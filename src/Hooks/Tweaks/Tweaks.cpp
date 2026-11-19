@@ -265,7 +265,7 @@ namespace Hooks::Tweaks {
         _getSpellTomeDescription(itemCard, spell, out);
         if (auto alt = get_alt_spell_description(spell); alt) {
             out = alt.value();
-        } 
+        }
     }
 
     void ActiveEffectDurationPatch::Update(RE::ActiveEffect* a_this, float delta) {
@@ -281,8 +281,10 @@ namespace Hooks::Tweaks {
     void SheathePatch::Patch() {
 		namespace INI = Settings::INI;
 
+		REX::INFO("  - Installing the Spell Dispelling tweak..."sv);
 		bool doInstall = INI::Get<bool>(INI::TWEAK_DISPEL).value_or(false);
 		if (!doInstall) {
+			REX::INFO("    >User chose not to install."sv);
 			return;
 		}
 
