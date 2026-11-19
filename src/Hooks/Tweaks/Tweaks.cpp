@@ -281,4 +281,21 @@ namespace Hooks::Tweaks {
             a_this->elapsedSeconds = previousElapsed;
         }
     }
+
+    void SheathePatch::Patch() {
+		namespace INI = Settings::INI;
+
+		bool doInstall = INI::Get<bool>(INI::TWEAK_DISPEL).value_or(false);
+		if (!doInstall) {
+			return;
+		}
+
+		static constexpr auto desc{ RE::VFuncs::PlayerCharacter::DrawLowerHands };
+		REL::Relocation<std::uintptr_t> target{ desc.vtable[desc.index] };
+		_raiseLowerHands = target.write_vfunc(desc.offset, RaiseLowerHands); 
+    }
+
+    void SheathePatch::RaiseLowerHands(RE::PlayerCharacter* a_this, bool draw) {
+		_raiseLowerHands(a_this, draw);
+    }
 }
