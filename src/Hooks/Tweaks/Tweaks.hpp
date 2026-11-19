@@ -9,7 +9,7 @@ namespace Hooks
         struct ActiveEffectDurationPatch
         {
             [[nodiscard]] static bool Patch();
-            inline static void Update(RE::ActiveEffect* a_this, float delta);
+            static void Update(RE::ActiveEffect* a_this, float delta);
             inline static REL::Relocation<decltype(Update)> _update;
         };
 

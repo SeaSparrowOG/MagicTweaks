@@ -238,7 +238,7 @@ namespace {
 }
 
 namespace Conditions {
-    std::vector<RE::Effect*> get_valid_effects(const RE::MagicItem *spell) {
+    std::vector<RE::Effect*> get_valid_effects(const RE::SpellItem *spell) {
         std::vector<RE::Effect*> res{};
 
         if (!spell) {
