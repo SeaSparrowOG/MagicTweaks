@@ -38,6 +38,10 @@ namespace Hooks
 
         [[nodiscard]] inline bool Install() {
             REX::INFO("  - Installing tweak-related hooks..."sv);
+            bool success = true;
+            success &= ActiveEffectDurationPatch::Patch();
+            success &= DescriptionPatch::Patch();
+            SheathePatch::Patch();
             return true;
         }
     }
