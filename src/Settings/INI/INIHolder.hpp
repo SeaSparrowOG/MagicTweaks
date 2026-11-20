@@ -92,22 +92,23 @@ namespace Settings
         inline constexpr const std::string_view TWEAK_DIALOGUE       = "Tweaks|bExtendEffectsInDialogue";
         inline constexpr const std::string_view TWEAK_DISPEL         = "Tweaks|bDispelOnSheathe";
         inline constexpr const std::string_view TWEAK_EARN_EXP       = "Tweaks|bEarnConjurationHitExp";
-        inline constexpr const std::string_view TWEAK_UI_DESCRIPTION = "Dynamic Spell Description|bInstall";
 
         inline constexpr const std::string_view REDUCTION_ENABLE    = "Tweaks|bTweakCostReduction";
         inline constexpr const std::string_view REDUCTION_WEIGHT    = "Tweaks|fCostReductionSkillWeight";
         inline constexpr const std::string_view REDUCTION_MIN       = "Tweaks|fMinimumSpellSkill";
         inline constexpr const std::string_view REDUCTION_MAX_SKILL = "Tweaks|fMaximumSpellSkill";
         inline constexpr const std::string_view RREDUCTION_MAX_COST = "Tweaks|fMaxSpellCostReduction";
+        
+        inline constexpr const std::string_view TWEAK_UI_DESCRIPTION = "Systems|bDynamicSpellDescriptions";
+        inline constexpr const std::string_view MECHANICS_CONDITIONS = "Systems|bAdditionalConditions";
 
-        inline constexpr const std::string_view MECHANICS_CONDITIONS                 = "Additional Conditions|bInstall";
-        inline constexpr const std::string_view MECHANICS_SPELL_BINDING              = "Bound Spells|bInstall";
-        inline constexpr const std::string_view MECHANICS_SPELL_BINDING_UI           = "Bound Spells|bShowInUI";
-        inline constexpr const std::string_view MECHANICS_SPELL_BINDING_EXP          = "Bound Spells|bEarnExperienceInCombat";
-        inline constexpr const std::string_view MECHANICS_MAGICKA_SHIELD             = "Magicka Shield|bInstall";
-        inline constexpr const std::string_view MECHANICS_CASTING_SPEED              = "Tweaks|bTweakCastingSpeed";
-        inline constexpr const std::string_view MECHANICS_CASTING_SPEED_TIER_PENALTY = "Tweaks|fCastingSlowPercentPerTier";
-        inline constexpr const std::string_view MECHANICS_CASTING_SPEED_TIER_BLOCK   = "Tweaks|iMaxSkillDifference";
+        inline constexpr const std::string_view MECHANICS_SPELL_BINDING              = "Gameplay|bSpellBinding";
+        inline constexpr const std::string_view MECHANICS_SPELL_BINDING_UI           = "Gameplay|bSpellBindingUI";
+        inline constexpr const std::string_view MECHANICS_SPELL_BINDING_EXP          = "Gameplay|bSpellBindingEXP";
+        inline constexpr const std::string_view MECHANICS_MAGICKA_SHIELD             = "Gameplay|bMagickaShield";
+        inline constexpr const std::string_view MECHANICS_CASTING_SPEED              = "Gameplay|bCastingSpeed";
+        inline constexpr const std::string_view MECHANICS_CASTING_SPEED_TIER_PENALTY = "Gameplay|fCastingSpeedSlowdown";
+        inline constexpr const std::string_view MECHANICS_CASTING_SPEED_TIER_BLOCK   = "Gameplay|iCastingSpeedTierLimit";
 
         inline constexpr std::array<std::string_view, 20u> INI_SETTINGS = {
             FIX_POISON,
