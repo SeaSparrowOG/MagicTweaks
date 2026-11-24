@@ -2,7 +2,7 @@
 
 #include "Conditions/Conditions.hpp"
 #include "RE/Offset.h"
-#include "Settings/INI/INIHolder.hpp"
+#include "Settings/Settings.hpp"
 
 namespace {
     [[nodiscard]] char ascii_lower(const char chr) noexcept 
@@ -382,7 +382,7 @@ namespace Hooks::Tweaks {
     }
 
     void SheathePatch::Patch() {
-		namespace INI = Settings::INI;
+        namespace INI = Settings::INI;
 
 		REX::INFO("  - Installing the Spell Dispelling tweak..."sv);
 		bool doInstall = INI::Get<bool>(INI::TWEAK_DISPEL).value_or(false);
@@ -393,10 +393,40 @@ namespace Hooks::Tweaks {
 
 		static constexpr auto desc{ RE::VFuncs::PlayerCharacter::DrawLowerHands };
 		REL::Relocation<std::uintptr_t> target{ desc.vtable[desc.index] };
-		_raiseLowerHands = target.write_vfunc(desc.offset, RaiseLowerHands); 
+		_raiseLowerHands = target.write_vfunc(desc.offset, RaiseLowerHands);
     }
 
     void SheathePatch::RaiseLowerHands(RE::PlayerCharacter* a_this, bool draw) {
+		namespace MO = Settings::ModObjects;
+
 		_raiseLowerHands(a_this, draw);
+		if (draw) {
+			return;
+		}
+		
+		static auto* dispelKwd = MO::GetObject<RE::BGSKeyword>(MO::DISPEL_KEYWORD);
+		if (!dispelKwd) {
+			return;
+		}
+
+		auto* target = a_this->GetMagicTarget();
+		if (!target) {
+			return;
+		}
+
+		// This is... probably not needed. We make a copy of the list instead of
+		// just lazily iterating over the ames to collect "hits" and then dispel them.
+		auto activeEffects = *target->GetActiveEffectList();
+		for (auto* ame : activeEffects) {
+			if (!ame || ame->caster.get().get() != a_this) {
+				continue;
+			}
+			const auto* base = ame->GetBaseObject();
+			const bool hasKwd = base ? base->HasKeyword(dispelKwd) : false;
+			if (!hasKwd) {
+				continue;
+			}
+			ame->Dispel(false);
+		}
     }
 }
