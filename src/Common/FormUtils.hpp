@@ -253,7 +253,7 @@ namespace FormUtils
             return std::unexpected(FailureReason::PluginNotLoaded);
         }
 
-        auto* form = dh->LookupFormID(parsedNum.value(), modName);
+        auto* form = dh->LookupForm(parsedNum.value(), modName);
         if (!form) {
             return std::unexpected(FailureReason::FormNotInPlugin);
         }
@@ -266,37 +266,38 @@ namespace FormUtils
     }
 
     template <typename T>
-    concept derives_from_form = std::derived_from<RE::TESForm*, T>;
+    static std::string get_filename_id_pair(const T* form) {
+        assert(form);
+        const auto id = form->GetFormID();
+        if ((id & 0xFF000000) == 0xFF000000) {
+            return fmt::format("RUNTIME|{:06X}", id & 0xFFFFFF);
+        }
 
-    template <typename T> requires derives_from_form<T>
+        const auto* files = form->sourceFiles.array;
+        const auto* file = files ? files->front() : nullptr;
+        const auto* fileName = file ? file->fileName : "<No Name>";
+        const bool light = file && file->IsLight();
+        if (light) {
+            return fmt::format("{}|{:06X}", fileName, id & 0xFFF);
+        }
+        if (file) {
+            return fmt::format("{}|{:06X}", fileName, id & 0xFFFFFF);
+        }
+        return fmt::format("Runtime Created Form|{:08X}", id);
+    };
+
+    template <typename T>
     [[nodiscard]]
     std::string get_form_name(const T* form) {
-        const auto get_filename_id_pair = [](const auto* form){
-            const auto id = form->GetFormID();
-            if ((id & 0xFF000000) == 0xFF000000) {
-                return fmt::format("RUNTIME|{:06X}", id & 0xFFFFFF);
-            }
-
-            const auto* files = form->sourceFiles.array;
-            const auto* file = files ? files->front() : nullptr;
-            const auto* fileName = file ? file->fileName : "<No Name>";
-            return fmt::format(
-                file && file->IsLight() ? "{}|{:03X}" : "{}|{:06X}",
-                strcmp(fileName, "") == 0 ? "<Filename Empty>" : fileName, 
-                id & (file && file->IsLight() ? 0xFFF : 0xFFFFFF));
-        }();
-
         if (!form) {
             return "NONE";
         }
 
-        const auto id = form->GetFormID();
-
         std::string name{form->GetName()};
-        std::string source = get_filename_id_pair(form);
+        std::string source = get_filename_id_pair<T>(form);
         std::string edid{};
-        if constexpr (supports_edids_without_tweaks<T>()) {
-            edid = form->GetEditorID();
+        if constexpr (supports_edids_without_tweaks(form_type<T>::value)) {
+            edid = form->GetFormEditorID();
         }
         else if (static auto* tweaks = REX::W32::GetModuleHandleW(L"po3_Tweaks.dll"); tweaks) {
             edid = clib_util::editorID::get_editorID(form);
