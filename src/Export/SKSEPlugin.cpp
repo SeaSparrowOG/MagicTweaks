@@ -59,6 +59,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg) {
 				ReportAndFail("Failed to initiliaze event listeners");
 			}
 			SECTION_SEPARATOR;
+			if (!Hooks::PostLoad()) {
+				ReportAndFail("Failed to perform post-load hook operations");
+			}
+			SECTION_SEPARATOR;
 			REX::INFO("Finished startup tasks. Enjoy your game!"sv);
 			SECTION_SEPARATOR;
             break;

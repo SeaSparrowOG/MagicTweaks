@@ -17,4 +17,11 @@ namespace Hooks
         success &= Tweaks::Install();
         return success;
     }
+
+    [[nodiscard]] inline bool PostLoad() {
+        REX::INFO("Starting post-load hook operations..."sv);
+        bool success = true;
+        success &= Tweaks::PostLoad();
+        return success;
+    }
 }

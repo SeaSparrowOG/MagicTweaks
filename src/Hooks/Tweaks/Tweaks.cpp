@@ -212,6 +212,10 @@ namespace Hooks::Tweaks {
         return true;
     }
 
+    bool DescriptionPatch::PostLoad() {
+        return false;
+    }
+
     bool DescriptionPatch::Patch() {
         REX::INFO("    - Description Patch..."sv);
         bool shouldInstall = Settings::INI::Get<bool>(Settings::INI::TWEAK_UI_DESCRIPTION).value_or(false);
@@ -276,6 +280,105 @@ namespace Hooks::Tweaks {
         if (extend_duration(a_this)) {
             a_this->elapsedSeconds = previousElapsed;
         }
+    }
+
+	[[nodiscard]]
+	static bool apply_changes(const Json::Value& strObj) {
+		namespace MO = Settings::ModObjects;
+		assert(strObj.isString());
+
+		auto* kwd = MO::GetObject<RE::BGSKeyword>(MO::DISPEL_KEYWORD);
+		if (!kwd) {
+			REX::WARN("Failed to lookup keyword {} in MagicTweaks.esl"sv, MO::DISPEL_KEYWORD);
+			return false;
+		}
+
+		const std::string_view str = strObj.asString();
+
+		auto spellRes = FormUtils::get_form_from_string<RE::SpellItem>(str);
+		if (!spellRes) {
+			switch (spellRes.error()) {
+				case FormUtils::FailureReason::FormNotInPlugin:
+				case FormUtils::FailureReason::PluginNotLoaded:
+				case FormUtils::FailureReason::None:
+					break;
+				default:
+					REX::WARN("Query form failed with: {}"sv, 
+						FormUtils::failure_to_string(spellRes.error())
+					);
+					break;
+			}
+		}
+		auto* val = spellRes.value();
+		if (!val) {
+			return true;
+		}
+
+		auto& effects = val->effects;
+		if (effects.empty()) {
+			return true;
+		}
+
+		bool added = true;
+		for (auto* effect : effects) {
+			auto* base = effect ? effect->baseEffect : nullptr;
+			if (!base || base->HasKeyword(kwd)) {
+				continue;
+			}
+			if (!base->AddKeyword(kwd)) {
+				std::string failedForm = FormUtils::get_form_name(base);
+				REX::WARN("Failed to add keyword {} to {}"sv, MO::DISPEL_KEYWORD, failedForm);
+				added = false;
+			}
+		}
+		return added;
+	}
+
+	[[nodiscard]]
+	static bool apply_config(const Json::Value& val) {
+		if (!val.isObject()) {
+			return true;
+		}
+		const auto& dispel = val["dispel"];
+		if (!dispel) {
+			return true;
+		}
+
+		if (dispel.isString()) {
+			return apply_changes(dispel);
+		}
+		if (dispel.isArray()) {
+			bool success = true;
+			for (const auto& element : dispel) {
+				if (!element.isString()) {
+					REX::WARN("      - Non-string value in array."sv);
+					success = false;
+					continue;
+				}
+				success &= apply_changes(element);
+			}
+			return success;
+		}
+		REX::WARN("      - Non object or array item in config."sv);
+		return false;
+	}
+
+    bool SheathePatch::PostLoad() {
+		namespace MO = Settings::ModObjects;
+		REX::INFO("  - Sheathe patch..."sv);
+		auto* kwd = MO::GetObject<RE::BGSKeyword>(MO::DISPEL_KEYWORD);
+		if (!kwd) {
+			REX::CRITICAL("    >Failed to find the appropriate keyword within MagicTweaks.esl - plugin likely not active or out of date."sv);
+			return false;
+		}
+		bool success = true;
+		const auto& configs = Settings::JSON::Get();
+		for (const auto& [name, config] : configs) {
+			if (!apply_config(config)) {
+				REX::WARN("    >Failed to apply {}", name);
+			}
+		}
+        return success;
     }
 
     void SheathePatch::Patch() {

@@ -18,6 +18,7 @@ namespace Hooks
 
         struct DescriptionPatch
         {
+            [[nodiscard]] static bool PostLoad();
             [[nodiscard]] static bool Patch();
 
             static void GetSpellDescription(RE::ItemCard* itemCard, RE::SpellItem* spell, RE::BSString& out);
@@ -31,6 +32,7 @@ namespace Hooks
 
         struct SheathePatch
         {
+            static bool PostLoad();
             static void Patch();
             static void RaiseLowerHands(RE::PlayerCharacter* a_this, bool draw);
             inline static REL::Relocation<decltype(RaiseLowerHands)> _raiseLowerHands;
@@ -43,6 +45,14 @@ namespace Hooks
             success &= DescriptionPatch::Patch();
             SheathePatch::Patch();
             return true;
+        }
+
+        [[nodiscard]] inline bool PostLoad() {
+            REX::INFO("  - Performing post load operations - Tweaks..."sv);
+            bool success = true;
+            success &= DescriptionPatch::PostLoad();
+            success &= SheathePatch::PostLoad();
+            return success;
         }
     }
 }
