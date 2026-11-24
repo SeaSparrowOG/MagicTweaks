@@ -339,7 +339,7 @@ namespace Hooks::Tweaks {
 		if (!val.isObject()) {
 			return true;
 		}
-		const auto& dispel = val["dispel"];
+		const auto& dispel = val["dispelonseathe"];
 		if (!dispel) {
 			return true;
 		}
