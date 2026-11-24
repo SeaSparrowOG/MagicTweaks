@@ -293,8 +293,7 @@ namespace Hooks::Tweaks {
 			return false;
 		}
 
-		const std::string_view str = strObj.asString();
-
+		std::string str = strObj.asString();
 		auto spellRes = FormUtils::get_form_from_string<RE::SpellItem>(str);
 		if (!spellRes) {
 			switch (spellRes.error()) {
@@ -306,8 +305,9 @@ namespace Hooks::Tweaks {
 					REX::WARN("Query form failed with: {}"sv, 
 						FormUtils::failure_to_string(spellRes.error())
 					);
-					break;
+					return false;
 			}
+			return true;
 		}
 		auto* val = spellRes.value();
 		if (!val) {
