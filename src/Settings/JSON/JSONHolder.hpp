@@ -6,7 +6,8 @@
 
 #include <json/json.h>
 
-constexpr std::string_view json_type_to_string(const Json::ValueType type) noexcept {
+[[nodiscard]]
+inline constexpr std::string_view json_type_to_string(const Json::ValueType type) noexcept {
     switch (type) {
         case Json::ValueType::arrayValue: return "Array";
         case Json::ValueType::intValue: return "Int";
@@ -68,6 +69,11 @@ namespace Settings
 
             std::map<std::string, Json::Value> _configs{};
         };
+
+        [[nodiscard]]
+        inline const std::map<std::string, Json::Value>& Get() noexcept {
+            return JSONHolder::GetSingleton()->GetConfigs();
+        }
 
         [[nodiscard]] inline bool Preload() {
             REX::INFO("  - Preloading JSON Settings..."sv);
