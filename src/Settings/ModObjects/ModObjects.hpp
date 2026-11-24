@@ -39,7 +39,9 @@ namespace Settings
         inline constexpr const std::string_view PROXY_COUNT_SUMMONED_FROST = "MGT_PRXY_CommandedConjurationFrost";
         inline constexpr const std::string_view PROXY_COUNT_SUMMONED_SHOCK = "MGT_PRXY_CommandedConjurationShock";
 
-        inline constexpr std::array<std::string_view, 9u> GAME_OBJECTS = {
+        inline constexpr const std::string_view DISPEL_KEYWORD = "MGT_KYWD_DispelOnLower";
+
+        inline constexpr std::array<std::string_view, 10u> GAME_OBJECTS = {
             SPELL_BINDING_BINDS_HEALTH,
             SPELL_BINDING_BINDS_STAMINA,
             SPELL_BINDING_BINDS_MAGICKA,
@@ -49,7 +51,9 @@ namespace Settings
             PROXY_COUNT_REANIMATED,
             PROXY_COUNT_SUMMONED_FIRE,
             PROXY_COUNT_SUMMONED_FROST,
-            PROXY_COUNT_SUMMONED_SHOCK
+            PROXY_COUNT_SUMMONED_SHOCK,
+
+            DISPEL_KEYWORD
         };
 
         template <typename T>
